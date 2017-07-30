@@ -20,6 +20,7 @@
 // IN THE SOFTWARE.
 //-----------------------------------------------------------------------------
 
+#include "console/engineAPI.h"
 #include "platform/platform.h"
 #include "gui/worldEditor/terrainActions.h"
 
@@ -281,7 +282,6 @@ void RaiseHeightAction::process( Selection *sel, const Gui3DMouseEvent &evt, boo
       return;
 
    Point2I brushPos = brush->getPosition();
-   Point2I brushSize = brush->getSize();
    GridPoint brushGridPoint = brush->getGridPoint();
 
    Vector<GridInfo> cur; // the height at the brush position
@@ -326,7 +326,6 @@ void LowerHeightAction::process(Selection * sel, const Gui3DMouseEvent &, bool s
       return;
 
    Point2I brushPos = brush->getPosition();
-   Point2I brushSize = brush->getSize();
    GridPoint brushGridPoint = brush->getGridPoint();
 
    Vector<GridInfo> cur; // the height at the brush position
@@ -631,6 +630,52 @@ void SmoothHeightAction::process(Selection * sel, const Gui3DMouseEvent &, bool 
    }
 }
 
+void SmoothSlopeAction::process(Selection * sel, const Gui3DMouseEvent &, bool selChanged, Type)  
+{  
+   if(!sel->size())  
+      return;  
+  
+   if(selChanged)  
+   {  
+      // Perform simple 2d linear regression on x&z and y&z:  
+      // b = (Avg(xz) - Avg(x)Avg(z))/(Avg(x^2) - Avg(x)^2)  
+      Point2F prod(0.f, 0.f);   // mean of product for covar  
+      Point2F avgSqr(0.f, 0.f); // mean sqr of x, y for var  
+      Point2F avgPos(0.f, 0.f);  
+      F32 avgHeight = 0.f;  
+      F32 z;  
+      Point2F pos;  
+      for(U32 k = 0; k < sel->size(); k++)  
+      {  
+         mTerrainEditor->getUndoSel()->add((*sel)[k]);  
+         pos = Point2F((*sel)[k].mGridPoint.gridPos.x, (*sel)[k].mGridPoint.gridPos.y);  
+         z = (*sel)[k].mHeight;  
+  
+         prod += pos * z;  
+         avgSqr += pos * pos;  
+         avgPos += pos;  
+         avgHeight += z;  
+      }  
+  
+      prod /= sel->size();  
+      avgSqr /= sel->size();  
+      avgPos /= sel->size();  
+      avgHeight /= sel->size();  
+  
+      Point2F avgSlope = (prod - avgPos*avgHeight)/(avgSqr - avgPos*avgPos);  
+  
+      F32 goalHeight;  
+      for(U32 i = 0; i < sel->size(); i++)  
+      {  
+         goalHeight = avgHeight + ((*sel)[i].mGridPoint.gridPos.x - avgPos.x)*avgSlope.x +  
+            ((*sel)[i].mGridPoint.gridPos.y - avgPos.y)*avgSlope.y;  
+         (*sel)[i].mHeight += (goalHeight - (*sel)[i].mHeight) * (*sel)[i].mWeight;  
+         mTerrainEditor->setGridInfo((*sel)[i]);  
+      }  
+      mTerrainEditor->scheduleGridUpdate();  
+   }  
+}  
+
 void PaintNoiseAction::process(Selection * sel, const Gui3DMouseEvent &, bool selChanged, Type type)
 {
    // If this is the ending
@@ -750,11 +795,10 @@ void TerrainSmoothAction::smooth( TerrainBlock *terrain, F32 factor, U32 steps )
    redo();
 }
 
-ConsoleMethod( TerrainSmoothAction, smooth, void, 5, 5, "( TerrainBlock obj, F32 factor, U32 steps )")
+DefineConsoleMethod( TerrainSmoothAction, smooth, void, ( TerrainBlock *terrain, F32 factor, U32 steps ), , "( TerrainBlock obj, F32 factor, U32 steps )")
 {
-   TerrainBlock *terrain = NULL;
-   if ( Sim::findObject( argv[2], terrain ) && terrain )
-   	object->smooth( terrain, dAtof( argv[3] ), mClamp( dAtoi( argv[4] ), 1, 13 ) );
+	if (terrain)
+   	object->smooth( terrain, factor, mClamp( steps, 1, 13 ) );
 }
 
 void TerrainSmoothAction::undo()

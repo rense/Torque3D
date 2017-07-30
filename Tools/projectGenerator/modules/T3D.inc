@@ -23,7 +23,6 @@
 
 // 3D
 addEngineSrcDir('collision');
-addEngineSrcDir('interior');
 addEngineSrcDir('materials');
 addEngineSrcDir('lighting');
 addEngineSrcDir('lighting/common');
@@ -38,13 +37,22 @@ addEngineSrcDir('environment');
 
 addEngineSrcDir('forest');
 addEngineSrcDir('forest/ts');
-addEngineSrcDir('forest/editor');
+if(getToolBuild())
+   addEngineSrcDir('forest/editor');
 
 addEngineSrcDir('ts');
 addEngineSrcDir('ts/arch');
 addEngineSrcDir('physics');
 addEngineSrcDir('gui/3d');
 addEngineSrcDir('postFx' );
+
+addEngineSrcDir('assets');
+addEngineSrcDir('module');
+addEngineSrcDir('persistence/rapidjson');
+addEngineSrcDir('persistence/taml');
+addEngineSrcDir('persistence/taml/binary');
+addEngineSrcDir('persistence/taml/json');
+addEngineSrcDir('persistence/taml/xml');
 
 // 3D game
 addEngineSrcDir('T3D');
@@ -57,18 +65,25 @@ addEngineSrcDir('T3D/decal');
 addEngineSrcDir('T3D/sfx');
 addEngineSrcDir('T3D/gameBase');
 addEngineSrcDir('T3D/turret');
+addEngineSrcDir('T3D/assets');
 
 global $TORQUE_HIFI_NET;
+global $TORQUE_EXTENDED_MOVE;
 if ( $TORQUE_HIFI_NET == true )
 {
    addProjectDefines( 'TORQUE_HIFI_NET' );
    addEngineSrcDir('T3D/gameBase/hifi');
 }
+elseif ( $TORQUE_EXTENDED_MOVE == true )
+{
+   addProjectDefines( 'TORQUE_EXTENDED_MOVE' );
+   addEngineSrcDir('T3D/gameBase/extended');
+}
 else
 	addEngineSrcDir('T3D/gameBase/std');
 
 // Plstform specific stuff.
-switch( Generator::$platform )
+switch( T3D_Generator::$platform )
 {
    case "360":
       addEngineSrcDir('ts/arch/360');
@@ -84,6 +99,8 @@ switch( Generator::$platform )
       // Fall through
       
    case "mac":
+   case "linux":
+   case "linux_dedicated":
       addEngineSrcDir( 'terrain/glsl' );
       addEngineSrcDir( 'forest/glsl' );
       break;

@@ -46,6 +46,9 @@
 #include "gfx/primBuilder.h"
 #include "gfx/gfxDrawUtil.h"
 #include "materials/materialDefinition.h"
+#include "T3D/physics/physicsPlugin.h"
+#include "T3D/physics/physicsBody.h"
+#include "T3D/physics/physicsCollision.h"
 
 
 namespace {
@@ -60,8 +63,6 @@ static F32 sWorkingQueryBoxSizeMultiplier = 2.0f;  // How much larger should the
                                                    // will be updated due to motion, but any non-static shape
                                                    // that moves into the query box will not be noticed.
 
-const U32 sMoveRetryCount = 3;
-
 // Client prediction
 const S32 sMaxWarpTicks = 3;           // Max warp duration in ticks
 const S32 sMaxPredictionTicks = 30;    // Number of ticks to predict
@@ -69,7 +70,7 @@ const F32 sVehicleGravity = -20;
 
 // Physics and collision constants
 static F32 sRestTol = 0.5;             // % of gravity energy to be at rest
-static int sRestCount = 10;            // Consecutive ticks before comming to rest
+static S32 sRestCount = 10;            // Consecutive ticks before comming to rest
 
 } // namespace {}
 
@@ -172,6 +173,10 @@ VehicleData::VehicleData()
    jetEnergyDrain =  0.8f;
    minJetEnergy = 1;
 
+   steeringReturn = 0.0f;
+   steeringReturnSpeedScale = 0.01f;
+   powerSteering = false;
+
    for (S32 i = 0; i < Body::MaxSounds; i++)
       body.sound[i] = 0;
 
@@ -199,7 +204,8 @@ VehicleData::VehicleData()
    dMemset(waterSound, 0, sizeof(waterSound));
 
    collDamageThresholdVel = 20;
-   collDamageMultiplier   = 0.05f;
+   collDamageMultiplier = 0.05f;
+   enablePhysicsRep = true;
 }
 
 
@@ -214,6 +220,7 @@ bool VehicleData::preload(bool server, String &errorStr)
    if (!collisionDetails.size() || collisionDetails[0] == -1)
    {
       Con::errorf("VehicleData::preload failed: Vehicle models must define a collision-1 detail");
+      errorStr = String::ToString("VehicleData: Couldn't load shape \"%s\"",shapeName);
       return false;
    }
 
@@ -221,7 +228,7 @@ bool VehicleData::preload(bool server, String &errorStr)
    if (!server) {
       for (S32 i = 0; i < Body::MaxSounds; i++)
          if (body.sound[i])
-            Sim::findObject(SimObjectId(body.sound[i]),body.sound[i]);
+            Sim::findObject(SimObjectId((uintptr_t)body.sound[i]),body.sound[i]);
    }
 
    if( !dustEmitter && dustID != 0 )
@@ -270,7 +277,7 @@ void VehicleData::packData(BitStream* stream)
    stream->write(body.friction);
    for (i = 0; i < Body::MaxSounds; i++)
       if (stream->writeFlag(body.sound[i]))
-         stream->writeRangedU32(packed? SimObjectId(body.sound[i]):
+         stream->writeRangedU32(packed? SimObjectId((uintptr_t)body.sound[i]):
                                 body.sound[i]->getId(),DataBlockObjectIdFirst,
                                 DataBlockObjectIdLast);
 
@@ -292,6 +299,10 @@ void VehicleData::packData(BitStream* stream)
    stream->write(jetEnergyDrain);
    stream->write(minJetEnergy);
 
+   stream->write(steeringReturn);
+   stream->write(steeringReturnSpeedScale);
+   stream->writeFlag(powerSteering);
+
    stream->writeFlag(cameraRoll);
    stream->write(cameraLag);
    stream->write(cameraDecay);
@@ -306,6 +317,7 @@ void VehicleData::packData(BitStream* stream)
    stream->write(softSplashSoundVel);
    stream->write(medSplashSoundVel);
    stream->write(hardSplashSoundVel);
+   stream->write(enablePhysicsRep);
 
    // write the water sound profiles
    for(i = 0; i < MaxSounds; i++)
@@ -333,14 +345,14 @@ void VehicleData::packData(BitStream* stream)
       }
    }
 
-   for (int j = 0;  j < VC_NUM_DAMAGE_EMITTER_AREAS; j++)
+   for (S32 j = 0;  j < VC_NUM_DAMAGE_EMITTER_AREAS; j++)
    {
       stream->write( damageEmitterOffset[j].x );
       stream->write( damageEmitterOffset[j].y );
       stream->write( damageEmitterOffset[j].z );
    }
 
-   for (int k = 0; k < VC_NUM_DAMAGE_LEVELS; k++)
+   for (S32 k = 0; k < VC_NUM_DAMAGE_LEVELS; k++)
    {
       stream->write( damageLevelTolerance[k] );
    }
@@ -384,6 +396,10 @@ void VehicleData::unpackData(BitStream* stream)
    stream->read(&jetEnergyDrain);
    stream->read(&minJetEnergy);
 
+   stream->read(&steeringReturn);
+   stream->read(&steeringReturnSpeedScale);
+   powerSteering = stream->readFlag();
+
    cameraRoll = stream->readFlag();
    stream->read(&cameraLag);
    stream->read(&cameraDecay);
@@ -398,6 +414,7 @@ void VehicleData::unpackData(BitStream* stream)
    stream->read(&softSplashSoundVel);
    stream->read(&medSplashSoundVel);
    stream->read(&hardSplashSoundVel);
+   stream->read(&enablePhysicsRep);
 
    // write the water sound profiles
    for(i = 0; i < MaxSounds; i++)
@@ -428,14 +445,14 @@ void VehicleData::unpackData(BitStream* stream)
       }
    }
 
-   for( int j=0; j<VC_NUM_DAMAGE_EMITTER_AREAS; j++ )
+   for( S32 j=0; j<VC_NUM_DAMAGE_EMITTER_AREAS; j++ )
    {
       stream->read( &damageEmitterOffset[j].x );
       stream->read( &damageEmitterOffset[j].y );
       stream->read( &damageEmitterOffset[j].z );
    }
 
-   for( int k=0; k<VC_NUM_DAMAGE_LEVELS; k++ )
+   for( S32 k=0; k<VC_NUM_DAMAGE_LEVELS; k++ )
    {
       stream->read( &damageLevelTolerance[k] );
    }
@@ -452,6 +469,11 @@ void VehicleData::unpackData(BitStream* stream)
 
 void VehicleData::initPersistFields()
 {
+   addGroup("Physics");
+   addField("enablePhysicsRep", TypeBool, Offset(enablePhysicsRep, VehicleData),
+      "@brief Creates a representation of the object in the physics plugin.\n");
+   endGroup("Physics");
+
    addField( "jetForce", TypeF32, Offset(jetForce, VehicleData),
       "@brief Additional force applied to the vehicle when it is jetting.\n\n"
       "For WheeledVehicles, the force is applied in the forward direction. For "
@@ -461,6 +483,13 @@ void VehicleData::initPersistFields()
       "Once the vehicle's energy level reaches 0, it will no longer be able to jet." );
    addField( "minJetEnergy", TypeF32, Offset(minJetEnergy, VehicleData),
       "Minimum vehicle energy level to begin jetting." );
+
+   addField( "steeringReturn", TypeF32, Offset(steeringReturn, VehicleData),
+      "Rate at which the vehicle's steering returns to forwards when it is moving." );
+   addField( "steeringReturnSpeedScale", TypeF32, Offset(steeringReturnSpeedScale, VehicleData),
+      "Amount of effect the vehicle's speed has on its rate of steering return." );
+   addField( "powerSteering", TypeBool, Offset(powerSteering, VehicleData),
+      "If true, steering does not auto-centre while the vehicle is being steered by its driver." );
 
    addField( "massCenter", TypePoint3F, Offset(massCenter, VehicleData),
       "Defines the vehicle's center of mass (offset from the origin of the model)." );
@@ -662,6 +691,8 @@ Vehicle::Vehicle()
    mWorkingQueryBox.minExtents.set(-1e9f, -1e9f, -1e9f);
    mWorkingQueryBox.maxExtents.set(-1e9f, -1e9f, -1e9f);
    mWorkingQueryBoxCountDown = sWorkingQueryBoxStaleThreshold;
+
+   mPhysicsRep = NULL;
 }
 
 U32 Vehicle::getCollisionMask()
@@ -675,6 +706,25 @@ Point3F Vehicle::getVelocity() const
    return mRigid.linVelocity;
 }
 
+void Vehicle::_createPhysics()
+{
+   SAFE_DELETE(mPhysicsRep);
+
+   if (!PHYSICSMGR || !mDataBlock->enablePhysicsRep)
+      return;
+
+   TSShape *shape = mShapeInstance->getShape();
+   PhysicsCollision *colShape = NULL;
+   colShape = shape->buildColShape(false, getScale());
+
+   if (colShape)
+   {
+      PhysicsWorld *world = PHYSICSMGR->getWorld(isServerObject() ? "server" : "client");
+      mPhysicsRep = PHYSICSMGR->createBody();
+      mPhysicsRep->init(colShape, 0, PhysicsBody::BF_KINEMATIC, this, world);
+      mPhysicsRep->setTransform(getTransform());
+   }
+}
 //----------------------------------------------------------------------------
 
 bool Vehicle::onAdd()
@@ -699,7 +749,7 @@ bool Vehicle::onAdd()
    {
       if( mDataBlock->dustEmitter )
       {
-         for( int i=0; i<VehicleData::VC_NUM_DUST_EMITTERS; i++ )
+         for( S32 i=0; i<VehicleData::VC_NUM_DUST_EMITTERS; i++ )
          {
             mDustEmitterList[i] = new ParticleEmitter;
             mDustEmitterList[i]->onNewDataBlock( mDataBlock->dustEmitter, false );
@@ -756,11 +806,15 @@ bool Vehicle::onAdd()
    mConvex.box.maxExtents.convolve(mObjScale);
    mConvex.findNodeTransform();
 
+   _createPhysics();
+
    return true;
 }
 
 void Vehicle::onRemove()
 {
+   SAFE_DELETE(mPhysicsRep);
+
    U32 i=0;
    for( i=0; i<VehicleData::VC_NUM_DUST_EMITTERS; i++ )
    {
@@ -803,6 +857,8 @@ void Vehicle::processTick(const Move* move)
    PROFILE_SCOPE( Vehicle_ProcessTick );
 
    Parent::processTick(move);
+   if ( isMounted() )
+      return;
 
    // Warp to catch up to server
    if (mDelta.warpCount < mDelta.warpTicks)
@@ -860,6 +916,11 @@ void Vehicle::processTick(const Move* move)
       setPosition(mRigid.linPosition, mRigid.angPosition);
       setMaskBits(PositionMask);
       updateContainer();
+
+      //TODO: Only update when position has actually changed
+      //no need to check if mDataBlock->enablePhysicsRep is false as mPhysicsRep will be NULL if it is
+      if (mPhysicsRep)
+         mPhysicsRep->moveKinematicTo(getTransform());
    }
 }
 
@@ -868,6 +929,8 @@ void Vehicle::interpolateTick(F32 dt)
    PROFILE_SCOPE( Vehicle_InterpolateTick );
 
    Parent::interpolateTick(dt);
+   if ( isMounted() )
+      return;
 
    if(dt == 0.0f)
       setRenderPosition(mDelta.pos, mDelta.rot[1]);
@@ -1083,6 +1146,22 @@ void Vehicle::updateMove(const Move* move)
    else {
       mSteering.x = 0;
       mSteering.y = 0;
+   }
+
+   // Steering return
+   if(mDataBlock->steeringReturn > 0.0f &&
+      (!mDataBlock->powerSteering || (move->yaw == 0.0f && move->pitch == 0.0f)))
+   {
+      Point2F returnAmount(mSteering.x * mDataBlock->steeringReturn * TickSec,
+                           mSteering.y * mDataBlock->steeringReturn * TickSec);
+      if(mDataBlock->steeringReturnSpeedScale > 0.0f)
+      {
+         Point3F vel;
+         mWorldToObj.mulV(getVelocity(), &vel);
+         returnAmount += Point2F(mSteering.x * vel.y * mDataBlock->steeringReturnSpeedScale * TickSec,
+                                 mSteering.y * vel.y * mDataBlock->steeringReturnSpeedScale * TickSec);
+      }
+      mSteering -= returnAmount;
    }
 
    // Jetting flag
@@ -1769,7 +1848,7 @@ void Vehicle::updateDamageSmoke( F32 dt )
       F32 damagePercent = mDamage / mDataBlock->maxDamage;
       if( damagePercent >= mDataBlock->damageLevelTolerance[j] )
       {
-         for( int i=0; i<mDataBlock->numDmgEmitterAreas; i++ )
+         for( S32 i=0; i<mDataBlock->numDmgEmitterAreas; i++ )
          {
             MatrixF trans = getTransform();
             Point3F offset = mDataBlock->damageEmitterOffset[i];
@@ -1900,7 +1979,7 @@ void Vehicle::_renderMassAndContacts( ObjectRenderInst *ri, SceneRenderState *st
    GFX->getDrawUtil()->drawCube(desc, Point3F(0.1f,0.1f,0.1f),mDataBlock->massCenter, ColorI(255, 255, 255), &mRenderObjToWorld);
 
    // Now render all the contact points.
-   for (int i = 0; i < mCollisionList.getCount(); i++)
+   for (S32 i = 0; i < mCollisionList.getCount(); i++)
    {
       const Collision& collision = mCollisionList[i];
       GFX->getDrawUtil()->drawCube(desc, Point3F(0.05f,0.05f,0.05f),collision.point, ColorI(0, 0, 255));
@@ -1908,7 +1987,7 @@ void Vehicle::_renderMassAndContacts( ObjectRenderInst *ri, SceneRenderState *st
 
    // Finally render the normals as one big batch.
    PrimBuild::begin(GFXLineList, mCollisionList.getCount() * 2);
-   for (int i = 0; i < mCollisionList.getCount(); i++)
+   for (S32 i = 0; i < mCollisionList.getCount(); i++)
    {
       const Collision& collision = mCollisionList[i];
       PrimBuild::color3f(1, 1, 1);

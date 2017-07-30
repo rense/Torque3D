@@ -25,14 +25,14 @@
 #include "gfx/primBuilder.h"
 #include "gfx/D3D9/gfxD3D9CardProfiler.h"
 #include "gfx/D3D9/gfxD3D9EnumTranslate.h"
-#ifdef TORQUE_OS_WIN32
+#ifdef TORQUE_OS_WIN
 #include "platformWin32/videoInfo/wmiVideoInfo.h"
 #endif
 
 
-GFXD3D9CardProfiler::GFXD3D9CardProfiler() : GFXCardProfiler()
+GFXD3D9CardProfiler::GFXD3D9CardProfiler(U32 adapterIndex) : GFXCardProfiler()
 {
-
+   mAdapterOrdinal = adapterIndex;
 }
 
 GFXD3D9CardProfiler::~GFXD3D9CardProfiler()
@@ -87,9 +87,11 @@ void GFXD3D9CardProfiler::setupCardCapabilities()
    bool canDoFourStageDetailBlend = ( caps.TextureOpCaps & D3DTEXOPCAPS_SUBTRACT ) &&
                                     ( caps.PrimitiveMiscCaps & D3DPMISCCAPS_TSSARGTEMP ) &&
                                     ( caps.MaxTextureBlendStages > 3 );
+   bool canDoIndependentMrtBitDepth = (caps.PrimitiveMiscCaps & D3DPMISCCAPS_MRTINDEPENDENTBITDEPTHS ? 1 : 0 );
 
    setCapability( "lerpDetailBlend", canDoLERPDetailBlend );
    setCapability( "fourStageDetailBlend", canDoFourStageDetailBlend );
+   setCapability( "independentMrtBitDepth", canDoIndependentMrtBitDepth);
 }
 
 bool GFXD3D9CardProfiler::_queryCardCap(const String &query, U32 &foundResult)
@@ -133,7 +135,7 @@ bool GFXD3D9CardProfiler::_queryFormat( const GFXFormat fmt, const GFXTexturePro
    if(texFormat == (_D3DFORMAT)GFX_UNSUPPORTED_VAL)
       return false;
 
-   HRESULT hr = pD3D->CheckDeviceFormat( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, 
+   HRESULT hr = pD3D->CheckDeviceFormat( mAdapterOrdinal, D3DDEVTYPE_HAL, 
       adapterFormat, usage, rType, texFormat );
 
    bool retVal = SUCCEEDED( hr );
@@ -145,7 +147,7 @@ bool GFXD3D9CardProfiler::_queryFormat( const GFXFormat fmt, const GFXTexturePro
    {
       usage ^= D3DUSAGE_AUTOGENMIPMAP;
 
-      hr = pD3D->CheckDeviceFormat( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, 
+      hr = pD3D->CheckDeviceFormat( mAdapterOrdinal, D3DDEVTYPE_HAL, 
          adapterFormat, usage, D3DRTYPE_TEXTURE, GFXD3D9TextureFormat[fmt] );
 
       retVal = SUCCEEDED( hr );

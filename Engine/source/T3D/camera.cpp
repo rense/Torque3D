@@ -35,6 +35,12 @@
 #include "math/mathUtils.h"
 #include "math/mTransform.h"
 
+#ifdef TORQUE_EXTENDED_MOVE
+   #include "T3D/gameBase/extended/extendedMove.h"
+#endif
+
+S32 Camera::smExtendedMovePosRotIndex = 0;  // The ExtendedMove position/rotation index used for camera movements
+
 #define MaxPitch 1.5706f
 #define CameraRadius 0.05f;
 
@@ -254,6 +260,7 @@ Camera::Camera()
 {
    mNetFlags.clear(Ghostable);
    mTypeMask |= CameraObjectType;
+   mDataBlock = 0;
    mDelta.pos = Point3F(0.0f, 0.0f, 100.0f);
    mDelta.rot = Point3F(0.0f, 0.0f, 0.0f);
    mDelta.posVec = mDelta.rotVec = VectorF(0.0f, 0.0f, 0.0f);
@@ -269,6 +276,10 @@ Camera::Camera()
    mPosition.set(0.0f, 0.0f, 0.0f);
    mObservingClientObject = false;
    mMode = FlyMode;
+
+   mLastAbsoluteYaw = 0.0f;
+   mLastAbsolutePitch = 0.0f;
+   mLastAbsoluteRoll = 0.0f;
 
    // For NewtonFlyMode
    mNewtonRotation = false;
@@ -301,7 +312,7 @@ Camera::~Camera()
 
 bool Camera::onAdd()
 {
-   if(!Parent::onAdd())
+   if(!Parent::onAdd() || !mDataBlock)
       return false;
 
    mObjBox.maxExtents = mObjScale;
@@ -310,6 +321,31 @@ bool Camera::onAdd()
    resetWorldBox();
 
    addToScene();
+
+   scriptOnAdd();
+
+   return true;
+}
+
+//----------------------------------------------------------------------------
+
+void Camera::onRemove()
+{
+   scriptOnRemove();
+   removeFromScene();
+   Parent::onRemove();
+}
+
+//----------------------------------------------------------------------------
+
+bool Camera::onNewDataBlock( GameBaseData *dptr, bool reload )
+{
+   mDataBlock = dynamic_cast<CameraData*>(dptr);
+   if ( !mDataBlock || !Parent::onNewDataBlock( dptr, reload ) )
+      return false;
+
+   scriptOnNewDataBlock();
+
    return true;
 }
 
@@ -329,14 +365,6 @@ void Camera::onEditorDisable()
 
 //----------------------------------------------------------------------------
 
-void Camera::onRemove()
-{
-   removeFromScene();
-   Parent::onRemove();
-}
-
-//----------------------------------------------------------------------------
-
 // check if the object needs to be observed through its own camera...
 void Camera::getCameraTransform(F32* pos, MatrixF* mat)
 {
@@ -350,6 +378,19 @@ void Camera::getCameraTransform(F32* pos, MatrixF* mat)
 
    // Apply Camera FX.
    mat->mul( gCamFXMgr.getTrans() );
+}
+
+void Camera::getEyeCameraTransform(IDisplayDevice *displayDevice, U32 eyeId, MatrixF *outMat)
+{
+   // The camera doesn't support a third person mode,
+   // so we want to override the default ShapeBase behavior.
+   ShapeBase * obj = dynamic_cast<ShapeBase*>(static_cast<SimObject*>(mOrbitObject));
+   if(obj && static_cast<ShapeBaseData*>(obj->getDataBlock())->observeThroughObject)
+      obj->getEyeCameraTransform(displayDevice, eyeId, outMat);
+   else
+   {
+      Parent::getEyeCameraTransform(displayDevice, eyeId, outMat);
+   }
 }
 
 //----------------------------------------------------------------------------
@@ -416,13 +457,6 @@ void Camera::processTick(const Move* move)
 
    if ( isMounted() )
    {
-      // Fetch Mount Transform.
-      MatrixF mat;
-      mMount.object->getMountTransform( mMount.node, mMount.xfm, &mat );
-
-      // Apply.
-      setTransform( mat );
-
       // Update SceneContainer.
       updateContainer();
       return;
@@ -460,79 +494,155 @@ void Camera::processTick(const Move* move)
 
       VectorF rotVec(0, 0, 0);
 
-      // process input/determine rotation vector
-      if(virtualMode != StationaryMode &&
-         virtualMode != TrackObjectMode &&
-         (!mLocked || virtualMode != OrbitObjectMode && virtualMode != OrbitPointMode))
+      bool doStandardMove = true;
+
+#ifdef TORQUE_EXTENDED_MOVE
+      GameConnection* con = getControllingClient();
+
+      // Work with an absolute rotation from the ExtendedMove class?
+      if(con && con->getControlSchemeAbsoluteRotation())
       {
-         if(!strafeMode)
+         doStandardMove = false;
+         const ExtendedMove* emove = dynamic_cast<const ExtendedMove*>(move);
+         U32 emoveIndex = smExtendedMovePosRotIndex;
+         if(emoveIndex >= ExtendedMove::MaxPositionsRotations)
+            emoveIndex = 0;
+
+         if(emove->EulerBasedRotation[emoveIndex])
          {
-            rotVec.x = move->pitch;
-            rotVec.z = move->yaw;
+            if(virtualMode != StationaryMode &&
+               virtualMode != TrackObjectMode &&
+               (!mLocked || virtualMode != OrbitObjectMode && virtualMode != OrbitPointMode))
+            {
+               // Pitch
+               mRot.x += (emove->rotX[emoveIndex] - mLastAbsolutePitch);
+
+               // Do we also include the relative pitch value?
+               if(con->getControlSchemeAddPitchToAbsRot() && !strafeMode)
+               {
+                  F32 x = move->pitch;
+                  if (x > M_PI_F)
+                     x -= M_2PI_F;
+
+                  mRot.x += x;
+               }
+
+               // Constrain the range of mRot.x
+               while (mRot.x < -M_PI_F) 
+                  mRot.x += M_2PI_F;
+               while (mRot.x > M_PI_F) 
+                  mRot.x -= M_2PI_F;
+
+               // Yaw
+               mRot.z += (emove->rotZ[emoveIndex] - mLastAbsoluteYaw);
+
+               // Do we also include the relative yaw value?
+               if(con->getControlSchemeAddYawToAbsRot() && !strafeMode)
+               {
+                  F32 z = move->yaw;
+                  if (z > M_PI_F)
+                     z -= M_2PI_F;
+
+                  mRot.z += z;
+               }
+
+               // Constrain the range of mRot.z
+               while (mRot.z < -M_PI_F) 
+                  mRot.z += M_2PI_F;
+               while (mRot.z > M_PI_F) 
+                  mRot.z -= M_2PI_F;
+
+               mLastAbsoluteYaw = emove->rotZ[emoveIndex];
+               mLastAbsolutePitch = emove->rotX[emoveIndex];
+               mLastAbsoluteRoll = emove->rotY[emoveIndex];
+
+               // Bank
+               mRot.y = emove->rotY[emoveIndex];
+
+               // Constrain the range of mRot.y
+               while (mRot.y > M_PI_F) 
+                  mRot.y -= M_2PI_F;
+            }
          }
       }
-      else if(virtualMode == TrackObjectMode && bool(mOrbitObject))
+#endif
+
+      if(doStandardMove)
       {
-         // orient the camera to face the object
-         Point3F objPos;
-         // If this is a shapebase, use its render eye transform
-         // to avoid jittering.
-         ShapeBase *shape = dynamic_cast<ShapeBase*>((GameBase*)mOrbitObject);
-         if( shape != NULL )
+         // process input/determine rotation vector
+         if(virtualMode != StationaryMode &&
+            virtualMode != TrackObjectMode &&
+            (!mLocked || ((virtualMode != OrbitObjectMode) && (virtualMode != OrbitPointMode))))
          {
-            MatrixF ret;
-            shape->getRenderEyeTransform( &ret );
-            objPos = ret.getPosition();
+            if(!strafeMode)
+            {
+               rotVec.x = move->pitch;
+               rotVec.z = move->yaw;
+            }
+         }
+         else if(virtualMode == TrackObjectMode && bool(mOrbitObject))
+         {
+            // orient the camera to face the object
+            Point3F objPos;
+            // If this is a shapebase, use its render eye transform
+            // to avoid jittering.
+            ShapeBase *shape = dynamic_cast<ShapeBase*>((GameBase*)mOrbitObject);
+            if( shape != NULL )
+            {
+               MatrixF ret;
+               shape->getRenderEyeTransform( &ret );
+               objPos = ret.getPosition();
+            }
+            else
+            {
+               mOrbitObject->getWorldBox().getCenter(&objPos);
+            }
+            mObjToWorld.getColumn(3,&pos);
+            vec = objPos - pos;
+            vec.normalizeSafe();
+            F32 pitch, yaw;
+            MathUtils::getAnglesFromVector(vec, yaw, pitch);
+            rotVec.x = -pitch - mRot.x;
+            rotVec.z = yaw - mRot.z;
+            if(rotVec.z > M_PI_F)
+               rotVec.z -= M_2PI_F;
+            else if(rotVec.z < -M_PI_F)
+               rotVec.z += M_2PI_F;
+         }
+
+         // apply rotation vector according to physics rules
+         if(mNewtonRotation)
+         {
+            const F32 force = mAngularForce;
+            const F32 drag = mAngularDrag;
+
+            VectorF acc(0.0f, 0.0f, 0.0f);
+
+            rotVec.x *= 2.0f;   // Assume that our -2PI to 2PI range was clamped to -PI to PI in script
+            rotVec.z *= 2.0f;   // Assume that our -2PI to 2PI range was clamped to -PI to PI in script
+
+            F32 rotVecL = rotVec.len();
+            if(rotVecL > 0)
+            {
+               acc = (rotVec * force / mMass) * TickSec;
+            }
+
+            // Accelerate
+            mAngularVelocity += acc;
+
+            // Drag
+            mAngularVelocity -= mAngularVelocity * drag * TickSec;
+
+            // Rotate
+            mRot += mAngularVelocity * TickSec;
+            clampPitchAngle(mRot.x);
          }
          else
          {
-            mOrbitObject->getWorldBox().getCenter(&objPos);
+            mRot.x += rotVec.x;
+            mRot.z += rotVec.z;
+            clampPitchAngle(mRot.x);
          }
-         mObjToWorld.getColumn(3,&pos);
-         vec = objPos - pos;
-         vec.normalizeSafe();
-         F32 pitch, yaw;
-         MathUtils::getAnglesFromVector(vec, yaw, pitch);
-         rotVec.x = -pitch - mRot.x;
-         rotVec.z = yaw - mRot.z;
-         if(rotVec.z > M_PI_F)
-            rotVec.z -= M_2PI_F;
-         else if(rotVec.z < -M_PI_F)
-            rotVec.z += M_2PI_F;
-      }
-
-      // apply rotation vector according to physics rules
-      if(mNewtonRotation)
-      {
-         const F32 force = mAngularForce;
-         const F32 drag = mAngularDrag;
-
-         VectorF acc(0.0f, 0.0f, 0.0f);
-
-         rotVec.x *= 2.0f;   // Assume that our -2PI to 2PI range was clamped to -PI to PI in script
-         rotVec.z *= 2.0f;   // Assume that our -2PI to 2PI range was clamped to -PI to PI in script
-
-         F32 rotVecL = rotVec.len();
-         if(rotVecL > 0)
-         {
-            acc = (rotVec * force / mMass) * TickSec;
-         }
-
-         // Accelerate
-         mAngularVelocity += acc;
-
-         // Drag
-         mAngularVelocity -= mAngularVelocity * drag * TickSec;
-
-         // Rotate
-         mRot += mAngularVelocity * TickSec;
-         clampPitchAngle(mRot.x);
-      }
-      else
-      {
-         mRot.x += rotVec.x;
-         mRot.z += rotVec.z;
-         clampPitchAngle(mRot.x);
       }
 
       // Update position
@@ -667,6 +777,13 @@ void Camera::processTick(const Move* move)
          mDelta.rot = mRot;
          mDelta.posVec = mDelta.posVec - mDelta.pos;
          mDelta.rotVec = mDelta.rotVec - mDelta.rot;
+         for(U32 i=0; i<3; ++i)
+         {
+            if (mDelta.rotVec[i] > M_PI_F)
+               mDelta.rotVec[i] -= M_2PI_F;
+            else if (mDelta.rotVec[i] < -M_PI_F)
+               mDelta.rotVec[i] += M_2PI_F;
+         }
       }
 
       if(mustValidateEyePoint)
@@ -706,16 +823,7 @@ void Camera::interpolateTick(F32 dt)
    Parent::interpolateTick(dt);
 
    if ( isMounted() )
-   {
-      // Fetch Mount Transform.
-      MatrixF mat;
-      mMount.object->getRenderMountTransform( dt, mMount.node, mMount.xfm, &mat );
-
-      // Apply.
-      setRenderTransform( mat );
-
       return;
-   }
 
    Point3F rot = mDelta.rot + mDelta.rotVec * dt;
 
@@ -793,7 +901,21 @@ void Camera::_setPosition(const Point3F& pos, const Point3F& rot)
    zRot.set(EulerF(0.0f, 0.0f, rot.z));
    
    MatrixF temp;
-   temp.mul(zRot, xRot);
+
+   if(mDataBlock && mDataBlock->cameraCanBank)
+   {
+      // Take rot.y into account to bank the camera
+      MatrixF imat;
+      imat.mul(zRot, xRot);
+      MatrixF ymat;
+      ymat.set(EulerF(0.0f, rot.y, 0.0f));
+      temp.mul(imat, ymat);
+   }
+   else
+   {
+      temp.mul(zRot, xRot);
+   }
+
    temp.setColumn(3, pos);
    Parent::setTransform(temp);
    mRot = rot;
@@ -808,7 +930,21 @@ void Camera::setRotation(const Point3F& rot)
    zRot.set(EulerF(0.0f, 0.0f, rot.z));
 
    MatrixF temp;
-   temp.mul(zRot, xRot);
+
+   if(mDataBlock && mDataBlock->cameraCanBank)
+   {
+      // Take rot.y into account to bank the camera
+      MatrixF imat;
+      imat.mul(zRot, xRot);
+      MatrixF ymat;
+      ymat.set(EulerF(0.0f, rot.y, 0.0f));
+      temp.mul(imat, ymat);
+   }
+   else
+   {
+      temp.mul(zRot, xRot);
+   }
+
    temp.setColumn(3, getPosition());
    Parent::setTransform(temp);
    mRot = rot;
@@ -821,8 +957,25 @@ void Camera::_setRenderPosition(const Point3F& pos,const Point3F& rot)
    MatrixF xRot, zRot;
    xRot.set(EulerF(rot.x, 0, 0));
    zRot.set(EulerF(0, 0, rot.z));
+
    MatrixF temp;
-   temp.mul(zRot, xRot);
+
+   // mDataBlock may not be defined yet as this method is called during
+   // SceneObject::onAdd().
+   if(mDataBlock && mDataBlock->cameraCanBank)
+   {
+      // Take rot.y into account to bank the camera
+      MatrixF imat;
+      imat.mul(zRot, xRot);
+      MatrixF ymat;
+      ymat.set(EulerF(0.0f, rot.y, 0.0f));
+      temp.mul(imat, ymat);
+   }
+   else
+   {
+      temp.mul(zRot, xRot);
+   }
+
    temp.setColumn(3, pos);
    Parent::setRenderTransform(temp);
 }
@@ -839,6 +992,11 @@ void Camera::writePacketData(GameConnection *connection, BitStream *bstream)
    bstream->setCompressionPoint(pos);
    mathWrite(*bstream, pos);
    bstream->write(mRot.x);
+   if(mDataBlock && bstream->writeFlag(mDataBlock->cameraCanBank))
+   {
+      // Include mRot.y to allow for camera banking
+      bstream->write(mRot.y);
+   }
    bstream->write(mRot.z);
 
    U32 writeMode = mMode;
@@ -912,6 +1070,11 @@ void Camera::readPacketData(GameConnection *connection, BitStream *bstream)
    mathRead(*bstream, &pos);
    bstream->setCompressionPoint(pos);
    bstream->read(&rot.x);
+   if(bstream->readFlag())
+   {
+      // Include rot.y to allow for camera banking
+      bstream->read(&rot.y);
+   }
    bstream->read(&rot.z);
 
    GameBase* obj = 0;
@@ -1184,6 +1347,11 @@ void Camera::consoleInit()
       "- Fly Mode\n"
       "- Overhead Mode\n"
       "@ingroup BaseCamera\n");
+
+   // ExtendedMove support
+   Con::addVariable("$camera::extendedMovePosRotIndex", TypeS32, &smExtendedMovePosRotIndex, 
+      "@brief The ExtendedMove position/rotation index used for camera movements.\n\n"
+	   "@ingroup BaseCamera\n");
 }
 
 //-----------------------------------------------------------------------------
@@ -1363,7 +1531,6 @@ void Camera::_validateEyePoint(F32 pos, MatrixF *mat)
       disableCollision();
       RayInfo collision;
       U32 mask = TerrainObjectType |
-                 InteriorObjectType |
                  WaterObjectType |
                  StaticShapeObjectType |
                  PlayerObjectType |
@@ -1378,7 +1545,7 @@ void Camera::_validateEyePoint(F32 pos, MatrixF *mat)
          float dot = mDot(dir, collision.normal);
          if (dot > 0.01f)
          {
-            float colDist = mDot(startPos - collision.point, dir) - (1 / dot) * CameraRadius;
+            F32 colDist = mDot(startPos - collision.point, dir) - (1 / dot) * CameraRadius;
             if (colDist > pos)
                colDist = pos;
             if (colDist < 0.0f)
@@ -1692,7 +1859,7 @@ DefineEngineMethod( Camera, setOffset, void, (Point3F offset), ,
 //-----------------------------------------------------------------------------
 
 DefineEngineMethod( Camera, setOrbitMode, void, (GameBase* orbitObject, TransformF orbitPoint, F32 minDistance, F32 maxDistance, 
-                    F32 initDistance, bool ownClientObj, Point3F offset, bool locked), (false, Point3F(0.0f, 0.0f, 0.0f), false),
+                    F32 initDistance, bool ownClientObj, Point3F offset, bool locked), (false, Point3F::Zero, false),
                     "Set the camera to orbit around the given object, or if none is given, around the given point.\n\n"
                     "@param orbitObject The object to orbit around.  If no object is given (0 or blank string is passed in) use the orbitPoint instead\n"
                     "@param orbitPoint The point to orbit around when no object is given.  In the form of \"x y z ax ay az aa\" such as returned by SceneObject::getTransform().\n"
@@ -1715,7 +1882,7 @@ DefineEngineMethod( Camera, setOrbitMode, void, (GameBase* orbitObject, Transfor
 
 DefineEngineMethod( Camera, setOrbitObject, bool, (GameBase* orbitObject, VectorF rotation, F32 minDistance, 
                     F32 maxDistance, F32 initDistance, bool ownClientObject, Point3F offset, bool locked),
-                    (false, Point3F(0.0f, 0.0f, 0.0f), false),
+                    (false, Point3F::Zero, false),
                     "Set the camera to orbit around a given object.\n\n"
                     "@param orbitObject The object to orbit around.\n"
                     "@param rotation The initial camera rotation about the object in radians in the form of \"x y z\".\n"
@@ -1743,7 +1910,7 @@ DefineEngineMethod( Camera, setOrbitObject, bool, (GameBase* orbitObject, Vector
 
 DefineEngineMethod( Camera, setOrbitPoint, void, (TransformF orbitPoint, F32 minDistance, F32 maxDistance, F32 initDistance, 
                     Point3F offset, bool locked),
-                    (Point3F(0.0f, 0.0f, 0.0f), false),
+                    (Point3F::Zero, false),
                     "Set the camera to orbit around a given point.\n\n"
                     "@param orbitPoint The point to orbit around.  In the form of \"x y z ax ay az aa\" such as returned by SceneObject::getTransform().\n"
                     "@param minDistance The minimum distance allowed to the orbit object or point.\n"
@@ -1761,7 +1928,7 @@ DefineEngineMethod( Camera, setOrbitPoint, void, (TransformF orbitPoint, F32 min
 
 //-----------------------------------------------------------------------------
 
-DefineEngineMethod( Camera, setTrackObject, bool, (GameBase* trackObject, Point3F offset), (Point3F(0.0f, 0.0f, 0.0f)),
+DefineEngineMethod( Camera, setTrackObject, bool, (GameBase* trackObject, Point3F offset), (Point3F::Zero),
                     "Set the camera to track a given object.\n\n"
                     "@param trackObject The object to track.\n"
                     "@param offset [optional] An offset added to the camera's position.  Default is no offset.\n"

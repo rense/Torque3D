@@ -54,6 +54,7 @@ class Point3I
    void set(S32 in_x, S32 in_y, S32 in_z); ///< Set co-ordinates.
    void setMin(const Point3I&); ///< Store lesser co-ordinates in this point.
    void setMax(const Point3I&); ///< Store greater co-ordinates in this point.
+   void zero();                 ///< Zero all values
 
    //-------------------------------------- Math mutators
    void neg();                      ///< Invert co-ordinate's signs.
@@ -222,6 +223,7 @@ class Point3D
    void setMax(const Point3D&);
 
    void interpolate(const Point3D&, const Point3D&, F64);
+   void zero();
 
    operator F64*() { return (&x); }
    operator const F64*() const { return &x; }
@@ -231,11 +233,13 @@ class Point3D
    bool  isZero() const;
    F64 len()    const;
    F64 lenSquared() const;
+   F64 magnitudeSafe() const;
 
    //-------------------------------------- Mathematical mutators
   public:
    void neg();
    void normalize();
+   void normalizeSafe();
    void normalize(F64 val);
    void convolve(const Point3D&);
    void convolveInverse(const Point3D&);
@@ -318,6 +322,11 @@ inline void Point3I::setMax(const Point3I& _test)
    x = (_test.x > x) ? _test.x : x;
    y = (_test.y > y) ? _test.y : y;
    z = (_test.z > z) ? _test.z : z;
+}
+
+inline void Point3I::zero()
+{
+   x = y = z = 0;
 }
 
 inline void Point3I::neg()
@@ -721,11 +730,13 @@ inline Point3F& Point3F::operator*=(const Point3F &_vec)
 
 inline Point3F Point3F::operator/(const Point3F &_vec) const
 {
+   AssertFatal(_vec.x != 0.0f && _vec.y != 0.0f && _vec.z != 0.0f, "Error, div by zero attempted");
    return Point3F(x / _vec.x, y / _vec.y, z / _vec.z);
 }
 
 inline Point3F& Point3F::operator/=(const Point3F &_vec)
 {
+   AssertFatal(_vec.x != 0.0f && _vec.y != 0.0f && _vec.z != 0.0f, "Error, div by zero attempted");
    x /= _vec.x;
    y /= _vec.y;
    z /= _vec.z;
@@ -810,6 +821,11 @@ inline void Point3D::interpolate(const Point3D& _from, const Point3D& _to, F64 _
    m_point3D_interpolate( _from, _to, _factor, *this);
 }
 
+inline void Point3D::zero()
+{
+   x = y = z = 0.0;
+}
+
 inline bool Point3D::isZero() const
 {
    return (x == 0.0f) && (y == 0.0f) && (z == 0.0f);
@@ -843,12 +859,35 @@ inline F64 Point3D::lenSquared() const
 
 inline F64 Point3D::len() const
 {
-   return mSqrtD(x*x + y*y + z*z);
+   F64 temp = x*x + y*y + z*z;
+   return (temp > 0.0) ? mSqrtD(temp) : 0.0;
 }
 
 inline void Point3D::normalize()
 {
    m_point3D_normalize(*this);
+}
+
+inline F64 Point3D::magnitudeSafe() const
+{
+   if( isZero() )
+   {
+      return 0.0;
+   }
+   else
+   {
+      return len();
+   }
+}
+
+inline void Point3D::normalizeSafe()
+{
+   F64 vmag = magnitudeSafe();
+
+   if( vmag > POINT_EPSILON )
+   {
+      *this *= F64(1.0 / vmag);
+   }
 }
 
 inline void Point3D::normalize(F64 val)

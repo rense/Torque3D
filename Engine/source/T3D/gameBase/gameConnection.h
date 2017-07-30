@@ -45,6 +45,7 @@ enum GameConnectionConstants
    DataBlockQueueCount = 16
 };
 
+class IDisplayDevice;
 class SFXProfile;
 class MatrixF;
 class MatrixF;
@@ -53,8 +54,6 @@ class MoveManager;
 class MoveList;
 struct Move;
 struct AuthInfo;
-
-#define GameString TORQUE_APP_NAME
 
 const F32 MinCameraFov              = 1.f;      ///< min camera FOV
 const F32 MaxCameraFov              = 179.f;    ///< max camera FOV
@@ -71,6 +70,8 @@ private:
 
    U32  mMissionCRC;             // crc of the current mission file from the server
 
+   F32 mVisibleGhostDistance;
+
 private:
    U32 mLastControlRequestTime;
    S32 mDataBlockModifiedKey;
@@ -86,6 +87,16 @@ private:
    F32   mCameraFov;       ///< Current camera fov (in degrees).
    F32   mCameraPos;       ///< Current camera pos (0-1).
    F32   mCameraSpeed;     ///< Camera in/out speed.
+
+   IDisplayDevice* mDisplayDevice;  ///< Optional client display device that imposes rendering properties.
+   /// @}
+
+   /// @name Client side control scheme that may be referenced by control objects
+   /// @{
+   bool  mUpdateControlScheme;   ///< Set to notify client or server of control scheme change
+   bool  mAbsoluteRotation;      ///< Use absolute rotation values from client, likely through ExtendedMove
+   bool  mAddYawToAbsRot;        ///< Add relative yaw control to the absolute rotation calculation.  Only useful with mAbsoluteRotation.
+   bool  mAddPitchToAbsRot;      ///< Add relative pitch control to the absolute rotation calculation.  Only useful with mAbsoluteRotation.
    /// @}
 
 public:
@@ -143,6 +154,9 @@ public:
    /// @}
 
    bool canRemoteCreate();
+
+   void setVisibleGhostDistance(F32 dist);
+   F32 getVisibleGhostDistance();
 
 private:
    /// @name Connection State
@@ -253,6 +267,14 @@ public:
    bool getControlCameraTransform(F32 dt,MatrixF* mat);
    bool getControlCameraVelocity(Point3F *vel);
 
+   /// Returns the head transform for the control object, using supplemental information
+   /// from the provided IDisplayDevice
+   bool getControlCameraHeadTransform(IDisplayDevice *display, MatrixF *transform);
+
+   /// Returns the eye transforms for the control object, using supplemental information 
+   /// from the provided IDisplayDevice.
+   bool getControlCameraEyeTransforms(IDisplayDevice *display, MatrixF *transforms);
+   
    bool getControlCameraDefaultFov(F32 *fov);
    bool getControlCameraFov(F32 *fov);
    bool setControlCameraFov(F32 fov);
@@ -263,6 +285,16 @@ public:
 
    void setFirstPerson(bool firstPerson);
    
+   bool hasDisplayDevice() const { return mDisplayDevice != NULL; }
+   IDisplayDevice* getDisplayDevice() const { return mDisplayDevice; }
+   void setDisplayDevice(IDisplayDevice* display) { if (mDisplayDevice) mDisplayDevice->setDrawCanvas(NULL); mDisplayDevice = display; }
+   void clearDisplayDevice() { mDisplayDevice = NULL; }
+
+   void setControlSchemeParameters(bool absoluteRotation, bool addYawToAbsRot, bool addPitchToAbsRot);
+   bool getControlSchemeAbsoluteRotation() {return mAbsoluteRotation;}
+   bool getControlSchemeAddYawToAbsRot() {return mAddYawToAbsRot;}
+   bool getControlSchemeAddPitchToAbsRot() {return mAddPitchToAbsRot;}
+
    /// @}
 
    void detectLag();

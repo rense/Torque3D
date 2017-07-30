@@ -31,7 +31,6 @@
 
 #include <windows.h>
 
-#include "platform/event.h"
 #include "platform/platformInput.h"
 #include "windowManager/win32/winDispatch.h"
 #include "windowManager/win32/win32Window.h"
@@ -39,6 +38,8 @@
 #include "platformWin32/winDirectInput.h"
 #include "core/util/journal/process.h"
 #include "core/util/journal/journaledSignal.h"
+
+#if !defined( TORQUE_SDL )
 
 static U32 _ModifierKeys=0;
 static BYTE keyboardState[256];
@@ -136,14 +137,14 @@ static void _keyboardEvent(Win32Window* window,UINT message, WPARAM wParam, WPAR
        && window->getKeyboardTranslation()
 	    && !window->shouldNotTranslate( torqueMods, newVirtKey ) )
 	{
-      U16 chars[ 64 ];
+      wchar_t chars[ 64 ];
       dMemset( chars, 0, sizeof( chars ) );
 
       S32 res = ToUnicode( keyCode, scanCode, keyboardState, chars, sizeof( chars ) / sizeof( chars[ 0 ] ), 0 );
 
    	// This should only happen on Window 9x/ME systems
    	if( res == 0 )
-   		res = ToAscii( keyCode, scanCode, keyboardState, chars, 0 );
+         res = ToAscii( keyCode, scanCode, keyboardState, (LPWORD)chars, 0 );
 
       if( res >= 1 )
       {
@@ -177,7 +178,7 @@ static bool _dispatch(HWND hWnd,UINT message,WPARAM wParam,WPARAM lParam)
 	static S32 mouseNCState = -1; // -1 denotes unchanged, 
 	// 0  denotes changed but was hidden
 	// 1  denotes changed but was visible
-	Win32Window* window = hWnd?(Win32Window*)GetWindowLong(hWnd, GWL_USERDATA): 0;
+	Win32Window* window = hWnd?(Win32Window*)GetWindowLongPtr(hWnd, GWLP_USERDATA): 0;
 	const WindowId devId = window ? window->getWindowId() : 0;
 
 	// State tracking for focus/lose focus cursor management
@@ -284,7 +285,7 @@ static bool _dispatch(HWND hWnd,UINT message,WPARAM wParam,WPARAM lParam)
 	case WM_LBUTTONDOWN:
 	case WM_MBUTTONDOWN:
 	case WM_RBUTTONDOWN: {
-		int index = (message - WM_LBUTTONDOWN) / 3;
+		S32 index = (message - WM_LBUTTONDOWN) / 3;
 		button[index] = true;
 
 		// Capture the mouse on button down to allow dragging outside
@@ -300,7 +301,7 @@ static bool _dispatch(HWND hWnd,UINT message,WPARAM wParam,WPARAM lParam)
 	case WM_LBUTTONUP:
 	case WM_MBUTTONUP:
 	case WM_RBUTTONUP: {
-		int index = (message - WM_LBUTTONUP) / 3;
+		S32 index = (message - WM_LBUTTONUP) / 3;
 		button[index] = false;
 
 		// Release mouse capture from button down.
@@ -451,7 +452,7 @@ static bool _dispatch(HWND hWnd,UINT message,WPARAM wParam,WPARAM lParam)
 		// Quit indicates that we're not going to receive anymore Win32 messages.
 		// Therefore, it's appropriate to flag our event loop for exit as well,
 		// since we won't be getting any more messages.
-		Process::requestShutdown();
+		Process::requestShutdown((S32)wParam);
 		break;
 				  }
 
@@ -561,7 +562,7 @@ private:
 static WinMessageQueue _MessageQueue;
 
 
-void RemoveMessages(HWND hWnd,UINT msgBegin,WPARAM msgEnd )
+void RemoveMessages(HWND hWnd,UINT msgBegin,UINT msgEnd )
 {
 	_MessageQueue.remove( hWnd, msgBegin, msgEnd );
 }
@@ -592,3 +593,6 @@ void DispatchRemove(HWND hWnd)
 {
 	_MessageQueue.remove(hWnd);
 }
+
+
+#endif

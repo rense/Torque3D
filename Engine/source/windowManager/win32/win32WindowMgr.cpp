@@ -27,6 +27,8 @@
 #include "core/util/journal/process.h"
 #include "core/strings/unicode.h"
 
+#if !defined( TORQUE_SDL )
+
 // ------------------------------------------------------------------------
 
 void CloseSplashWindow(HINSTANCE hinst);
@@ -41,7 +43,8 @@ PlatformWindowManager * CreatePlatformWindowManager()
 Win32WindowManager::Win32WindowManager()
 {
    // Register in the process list.
-   Process::notify(this, &Win32WindowManager::_process, PROCESS_INPUT_ORDER);
+   mOnProcessSignalSlot.setDelegate( this, &Win32WindowManager::_process );
+   Process::notify( mOnProcessSignalSlot, PROCESS_INPUT_ORDER );
 
    // Init our list of allocated windows.
    mWindowListHead = NULL;
@@ -52,13 +55,14 @@ Win32WindowManager::Win32WindowManager()
    mCurtainWindow = NULL;
 
    mOffscreenRender = false;
+
+   mDisplayWindow = false;
+
+   buildMonitorsList();
 }
 
 Win32WindowManager::~Win32WindowManager()
 {
-   // Get ourselves off the process list.
-   Process::remove(this, &Win32WindowManager::_process);
-
    // Kill all our windows first.
    while(mWindowListHead)
       // The destructors update the list, so this works just fine.
@@ -107,20 +111,89 @@ S32 Win32WindowManager::getDesktopBitDepth()
 
 BOOL Win32WindowManager::MonitorEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData )
 {
+   Vector<MonitorInfo> * monitors = (Vector<MonitorInfo>*)dwData;
+
+   // Fill out the new monitor structure
+   monitors->increment();
+   MonitorInfo& monitor = monitors->last();
+   monitor.monitorHandle = hMonitor;
+   monitor.region.point.x = lprcMonitor->left;
+   monitor.region.point.y = lprcMonitor->top;
+   monitor.region.extent.x = lprcMonitor->right - lprcMonitor->left;
+   monitor.region.extent.y = lprcMonitor->bottom - lprcMonitor->top;
+
+   MONITORINFOEX info;
+   info.cbSize = sizeof(MONITORINFOEX);
+   if(GetMonitorInfo(hMonitor, &info))
+   {
+      monitor.name = info.szDevice;
+   }
+
+   return true;
+}
+
+void Win32WindowManager::buildMonitorsList()
+{
+   // Clear the list
+   mMonitors.clear();
+
+   // Enumerate all monitors
+   EnumDisplayMonitors(NULL, NULL, MonitorEnumProc, (uintptr_t)&mMonitors);
+}
+
+S32 Win32WindowManager::findFirstMatchingMonitor(const char* name)
+{
+   // Try and match the first part of the output device display name.  For example,
+   // a Monitor name of "\\.\DISPLAY1" might correspond to a display name
+   // of "\\.\DISPLAY1\Monitor0".  If two monitors are set up in duplicate mode then
+   // they will have the same 'display' part in their display name.
+   for(U32 i=0; i<mMonitors.size(); ++i)
+   {
+      if(dStrstr(name, mMonitors[i].name) == name)
+         return i;
+   }
+
+   return -1;
+}
+
+U32 Win32WindowManager::getMonitorCount()
+{
+   return mMonitors.size();
+}
+
+const char* Win32WindowManager::getMonitorName(U32 index)
+{
+   if(index >= mMonitors.size())
+      return "";
+
+   return mMonitors[index].name.c_str();
+}
+
+RectI Win32WindowManager::getMonitorRect(U32 index)
+{
+   if(index >= mMonitors.size())
+      return RectI(0, 0, 0, 0);
+
+   return mMonitors[index].region;
+}
+
+BOOL Win32WindowManager::MonitorRegionEnumProc(HMONITOR hMonitor, HDC hdcMonitor, LPRECT lprcMonitor, LPARAM dwData )
+{
    Vector<RectI> * regions = (Vector<RectI>*)dwData;
 
    regions->increment();
-   regions->last().point.x = lprcMonitor->left;
-   regions->last().point.y = lprcMonitor->top;
-   regions->last().extent.x = lprcMonitor->right - lprcMonitor->left;
-   regions->last().extent.y = lprcMonitor->bottom - lprcMonitor->top;
+   RectI& lastRegion = regions->last();
+   lastRegion.point.x = lprcMonitor->left;
+   lastRegion.point.y = lprcMonitor->top;
+   lastRegion.extent.x = lprcMonitor->right - lprcMonitor->left;
+   lastRegion.extent.y = lprcMonitor->bottom - lprcMonitor->top;
 
    return true;
 }
 
 void Win32WindowManager::getMonitorRegions(Vector<RectI> &regions)
 {
-   EnumDisplayMonitors(NULL, NULL, MonitorEnumProc, (U32)(void*)&regions);
+   EnumDisplayMonitors(NULL, NULL, MonitorRegionEnumProc, (U32)(void*)&regions);
 }
 
 void Win32WindowManager::getWindows(VectorPtr<PlatformWindow*> &windows)
@@ -182,7 +255,7 @@ PlatformWindow *Win32WindowManager::createWindow(GFXDevice *device, const GFXVid
    w32w->setVideoMode(mode);
 
    // Associate our window struct with the HWND.
-   SetWindowLongPtrW(w32w->mWindowHandle, GWLP_USERDATA, (LONG)w32w);
+   SetWindowLongPtr(w32w->mWindowHandle, GWLP_USERDATA, (LONG_PTR)w32w);
 
    // Do some error checking.
    AssertFatal(w32w->mWindowHandle != NULL, "Win32WindowManager::createWindow - Could not create window!");
@@ -195,11 +268,13 @@ PlatformWindow *Win32WindowManager::createWindow(GFXDevice *device, const GFXVid
 
    // If we're not rendering offscreen, make sure our window is shown and drawn to.
 
-   if (!mOffscreenRender)
-      ShowWindow( w32w->mWindowHandle, SW_SHOWDEFAULT );
+   w32w->setDisplayWindow(mDisplayWindow);
 
-   // Close any splash screen we created
-   CloseSplashWindow(winState.appInstance);
+   if (!mOffscreenRender && mDisplayWindow)
+   {
+      ShowWindow( w32w->mWindowHandle, SW_SHOWDEFAULT );
+      CloseSplashWindow(winState.appInstance);
+   }
 
    // Bind the window to the specified device.
    if(device)
@@ -286,7 +361,7 @@ void Win32WindowManager::_process()
 
          // [tom, 4/30/2007] I think this should work, but leaving the above commented
          // out just in case this is actually fubared with multiple windows.
-         Win32Window* window = (Win32Window*)(GetWindowLong(msg.hwnd, GWL_USERDATA));
+         Win32Window* window = (Win32Window*)(GetWindowLongPtr(msg.hwnd, GWLP_USERDATA));
          if(window)
             translated = window->translateMessage(msg);
          
@@ -382,7 +457,7 @@ void Win32WindowManager::_processCmdLineArgs( const S32 argc, const char **argv 
 {
    if (argc > 1)
    {
-      for (int i = 1; i < argc; i++)
+      for (S32 i = 1; i < argc; i++)
       {
          if ( dStrnicmp( argv[i], "-window", 7 ) == 0 )
          {
@@ -427,8 +502,8 @@ void Win32WindowManager::lowerCurtain()
 
    // Get the monitor's extents.
    MONITORINFO monInfo;
-   dMemset(&monInfo, 0, sizeof MONITORINFO);
-   monInfo.cbSize = sizeof MONITORINFO;
+   dMemset(&monInfo, 0, sizeof(MONITORINFO));
+   monInfo.cbSize = sizeof(MONITORINFO);
 
    GetMonitorInfo(hMon, &monInfo);
  
@@ -451,3 +526,5 @@ void Win32WindowManager::raiseCurtain()
    DestroyWindow(mCurtainWindow);
    mCurtainWindow = NULL;
 }
+
+#endif

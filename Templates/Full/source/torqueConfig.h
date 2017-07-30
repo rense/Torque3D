@@ -31,29 +31,18 @@
 //general, the information here is global for your entire codebase, applying
 //not only to your game proper, but also to all of your tools.
 
-/// Since we can build different engine "products" out of the same
-/// base engine source we need a way to differentiate which product
-/// this particular game is using.
-///
-/// TGE       0001
-/// TGEA      0002
-/// TGB       0003
-/// TGEA 360  0004
-/// TGE WII   0005
-/// Torque 3D 0006
-///
-#define TORQUE_ENGINE_PRODUCT      0006
-
 /// What's the name of your application? Used in a variety of places.
 #define TORQUE_APP_NAME            "Full"
+
+#define TORQUE_NET_DEFAULT_MULTICAST_ADDRESS "ff04::7467:656E:6574:776B"
 
 /// What version of the application specific source code is this?
 ///
 /// Version number is major * 1000 + minor * 100 + revision * 10.
-#define TORQUE_APP_VERSION         2009
+#define TORQUE_APP_VERSION         1000
 
 /// Human readable application version string.
-#define TORQUE_APP_VERSION_STRING  "2009"
+#define TORQUE_APP_VERSION_STRING  "1.0"
 
 /// Define me if you want to enable multithreading support.
 #ifndef TORQUE_MULTITHREAD
@@ -65,6 +54,11 @@
 #define TORQUE_DISABLE_MEMORY_MANAGER
 #endif
 
+/// The improved SimDictionary uses C++11 and is designed for games where
+/// there are over 10000 simobjects active normally. To enable the new
+/// SimDictionary just uncomment the line below.
+//#define USE_NEW_SIMDICTIONARY
+
 /// Define me if you want to disable the virtual mount system.
 //#define TORQUE_DISABLE_VIRTUAL_MOUNT_SYSTEM
 
@@ -72,6 +66,11 @@
 /// within a zip file.  This means that the zip file name itself must be
 /// the root of the path.  Requires the virtual mount system to be active.
 //#define TORQUE_DISABLE_FIND_ROOT_WITHIN_ZIP
+
+//Uncomment this define if you want to use the alternative zip support where you can 
+//define your directories and files inside the zip just like you would on disk
+//instead of the default zip support that treats the zip as an extra directory.
+//#define TORQUE_ZIP_DISK_LAYOUT
 
 /// Define me if you don't want Torque to compile dso's
 #define TORQUE_NO_DSO_GENERATION
@@ -172,10 +171,10 @@
 
 /// This #define is used by the FrameAllocator to set the size of the frame.
 ///
-/// It was previously set to 3MB but I've increased it to 16MB due to the
+/// It was previously set to 3MB but I've increased it to 32MB due to the
 /// FrameAllocator being used as temporary storage for bitmaps in the D3D9
 /// texture manager.
-#define TORQUE_FRAME_SIZE     16 << 20
+#define TORQUE_FRAME_SIZE     32 << 20
 
 // Finally, we define some dependent #defines. This enables some subsidiary
 // functionality to get automatically turned on in certain configurations.

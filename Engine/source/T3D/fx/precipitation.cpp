@@ -45,7 +45,6 @@
 
 static const U32 dropHitMask = 
    TerrainObjectType |
-   InteriorObjectType |
    WaterObjectType |
    StaticShapeObjectType;
 
@@ -130,10 +129,10 @@ PrecipitationData::PrecipitationData()
 {
    soundProfile      = NULL;
 
-   mDropName         = StringTable->insert("");
-   mDropShaderName   = StringTable->insert("");
-   mSplashName       = StringTable->insert("");
-   mSplashShaderName = StringTable->insert("");
+   mDropName         = StringTable->EmptyString();
+   mDropShaderName   = StringTable->EmptyString();
+   mSplashName       = StringTable->EmptyString();
+   mSplashShaderName = StringTable->EmptyString();
 
    mDropsPerSide     = 4;
    mSplashesPerSide  = 2;
@@ -299,6 +298,7 @@ Precipitation::Precipitation()
    mSplashShaderCameraPosSC = NULL;
    mSplashShaderAmbientSC = NULL;
 
+   mMaxVBDrops = 5000;
 }
 
 Precipitation::~Precipitation()
@@ -507,7 +507,7 @@ DefineEngineMethod(Precipitation, modifyStorm, void, (F32 percentage, F32 second
    object->modifyStorm(percentage, S32(seconds * 1000.0f));
 }
 
-DefineEngineMethod(Precipitation, setTurbulence, void, (F32 max, F32 speed, F32 seconds), (1.0f, 5.0f, 5.0),
+DefineEngineMethod(Precipitation, setTurbulence, void, (F32 max, F32 speed, F32 seconds), (1.0f, 5.0f, 5.0f),
    "Smoothly change the turbulence parameters over a period of time.\n"
    "@param max New #maxTurbulence value. Set to 0 to disable turbulence.\n"
    "@param speed New #turbulenceSpeed value.\n"
@@ -964,7 +964,7 @@ void Precipitation::initRenderObjects()
 
    // Create a volitile vertex buffer which
    // we'll lock and fill every frame.
-   mRainVB.set(GFX, mMaxVBDrops * 4, GFXBufferTypeVolatile);
+   mRainVB.set(GFX, mMaxVBDrops * 4, GFXBufferTypeDynamic);
 
    // Init the index buffer for rendering the
    // entire or a partially filled vb.
@@ -1169,9 +1169,7 @@ void Precipitation::destroySplash(Raindrop *drop)
    PROFILE_START(PrecipDestroySplash);
    if (drop == mSplashHead)
    {
-      mSplashHead = NULL;
-      PROFILE_END();
-      return;
+      mSplashHead = mSplashHead->nextSplashDrop;
    }
 
    if (drop->nextSplashDrop)
@@ -1296,7 +1294,7 @@ void Precipitation::interpolateTick(F32 delta)
 void Precipitation::processTick(const Move *)
 {
    //nothing to do on the server
-   if (isServerObject() || mDataBlock == NULL)
+   if (isServerObject() || mDataBlock == NULL || isHidden())
       return;
 
    const U32 currTime = Platform::getVirtualMilliseconds();
@@ -1560,7 +1558,7 @@ void Precipitation::renderObject(ObjectRenderInst *ri, SceneRenderState *state, 
    Point3F pos;
    VectorF orthoDir, velocity, right, up, rightUp(0.0f, 0.0f, 0.0f), leftUp(0.0f, 0.0f, 0.0f);
    F32 distance = 0;
-   GFXVertexPT* vertPtr = NULL;
+   GFXVertexPCT* vertPtr = NULL;
    const Point2F *tc;
 
    // Do this here and we won't have to in the loop!
@@ -1669,7 +1667,7 @@ void Precipitation::renderObject(ObjectRenderInst *ri, SceneRenderState *state, 
    }
    else
    {
-      GFX->disableShaders();
+      GFX->setupGenericShaders(GFXDevice::GSTexture);
 
       // We don't support distance fade or lighting without shaders.
       GFX->setStateBlock(mDistantSB);
@@ -1728,6 +1726,7 @@ void Precipitation::renderObject(ObjectRenderInst *ri, SceneRenderState *state, 
       // Do we need to relock the buffer?
       if ( !vertPtr )
          vertPtr = mRainVB.lock();
+      if(!vertPtr) return;
 
       // Set the proper texture coords... (it's fun!)
       tc = &mTexCoords[4*curr->texCoordIndex];
@@ -1801,7 +1800,7 @@ void Precipitation::renderObject(ObjectRenderInst *ri, SceneRenderState *state, 
       GFX->setShaderConstBuffer(mSplashShaderConsts);
    }
    else
-      GFX->disableShaders();
+      GFX->setupGenericShaders(GFXDevice::GSTexture);
 
    while (curr)
    {
@@ -1818,6 +1817,7 @@ void Precipitation::renderObject(ObjectRenderInst *ri, SceneRenderState *state, 
       // Do we need to relock the buffer?
       if ( !vertPtr )
          vertPtr = mRainVB.lock();
+      if(!vertPtr) return;
 
       vertPtr->point = pos + leftUp;
       vertPtr->texCoord = *tc;

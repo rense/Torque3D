@@ -75,11 +75,26 @@ function toggleGuiEditor( %make )
       if( EditorIsActive() && !GuiEditor.toggleIntoEditorGui )
          toggleEditor( true );
          
-      GuiEdit();
+      if( !isObject( GuiEditCanvas ) )
+         new GuiControl( GuiEditCanvas, EditorGuiGroup );
       
-	  // Cancel the scheduled event to prevent
-	  // the level from cycling after it's duration
-	  // has elapsed.
+      if( GuiEditorIsActive() )
+      {
+         GuiEditor.close();
+      }
+      else
+      {
+         GuiEditor.open();
+      
+         // Cancel the scheduled event to prevent
+         // the level from cycling after it's duration
+         // has elapsed.
+         cancel($Game::Schedule);
+      }
+      
+      // Cancel the scheduled event to prevent
+      // the level from cycling after it's duration
+      // has elapsed.
       cancel($Game::Schedule);
    }
 }
@@ -97,6 +112,26 @@ package GuiEditor_BlockDialogs
 };
 
 //---------------------------------------------------------------------------------------------
+
+function GuiEditor::open(%this)
+{
+   GuiEditCanvas.onCreateMenu();
+
+   GuiEditContent(Canvas.getContent());
+}
+
+function GuiEditor::close(%this)
+{
+   // prevent the mission editor from opening while the GuiEditor is open.
+   if(Canvas.getContent() != GuiEditorGui.getId())
+      return;
+
+   GuiGroup.add(GuiEditorGui);
+   
+   Canvas.setContent(GuiEditor.lastContent);
+   
+   GuiEditCanvas.onDestroyMenu();
+}
 
 function GuiEditor::openForEditing( %this, %content )
 {   
@@ -851,7 +886,7 @@ function GuiEditorTabBook::onTabSelected( %this, %text, %index )
          %sidebar-->button4.command = "GuiEditor.showDeleteProfileDialog( GuiEditorProfilesTree.getSelectedProfile() );";
          %sidebar-->button4.tooltip = "Delete Selected Profile";
       
-         %sidebar-->button3.setBitmap( "core/art/gui/images/new" );
+         %sidebar-->button3.setBitmap( "tools/gui/images/new" );
          %sidebar-->button3.command = "GuiEditor.createNewProfile( \"Unnamed\" );";
          %sidebar-->button3.tooltip = "Create New Profile with Default Values";
          

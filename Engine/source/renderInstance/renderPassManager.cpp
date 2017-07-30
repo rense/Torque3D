@@ -42,9 +42,8 @@
 #include "console/engineAPI.h"
 
 
-const RenderInstType RenderInstType::Invalid( String::EmptyString );
+const RenderInstType RenderInstType::Invalid( "" );
 
-const RenderInstType RenderPassManager::RIT_Interior("Interior");
 const RenderInstType RenderPassManager::RIT_Mesh("Mesh");
 const RenderInstType RenderPassManager::RIT_Shadow("Shadow");
 const RenderInstType RenderPassManager::RIT_Sky("Sky");
@@ -52,8 +51,10 @@ const RenderInstType RenderPassManager::RIT_Terrain("Terrain");
 const RenderInstType RenderPassManager::RIT_Object("Object");      
 const RenderInstType RenderPassManager::RIT_ObjectTranslucent("ObjectTranslucent");
 const RenderInstType RenderPassManager::RIT_Decal("Decal");
+const RenderInstType RenderPassManager::RIT_DecalRoad("DecalRoad");
 const RenderInstType RenderPassManager::RIT_Water("Water");
 const RenderInstType RenderPassManager::RIT_Foliage("Foliage");
+const RenderInstType RenderPassManager::RIT_VolumetricFog("ObjectVolumetricFog");
 const RenderInstType RenderPassManager::RIT_Translucent("Translucent");
 const RenderInstType RenderPassManager::RIT_Begin("Begin");
 const RenderInstType RenderPassManager::RIT_Custom("Custom");
@@ -123,6 +124,7 @@ RenderPassManager::RenderBinEventSignal& RenderPassManager::getRenderBinSignal()
 
 void RenderPassManager::initPersistFields()
 {
+   Parent::initPersistFields();
 }
 
 RenderPassManager::RenderPassManager()
@@ -256,7 +258,7 @@ void RenderPassManager::render(SceneRenderState * state)
    GFX->setProjectionMatrix( proj );
       
    // Restore a clean state for subsequent rendering.
-   GFX->disableShaders();
+   GFX->setupGenericShaders();
    for(S32 i = 0; i < GFX->getNumSamplers(); ++i)
       GFX->setTexture(i, NULL);
 }

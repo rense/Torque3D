@@ -50,6 +50,8 @@ FontRenderBatcher::FontRenderBatcher() : mStorage(8096)
       // result in the text always being black.  This may not be the case in OpenGL
       // so it may have to change.  -bramage
       f.samplers[0].textureColorOp = GFXTOPAdd;
+
+      f.setColorWrites(true, true, true, false); // NOTE: comment this out if alpha write is needed
       mFontSB = GFX->createStateBlock(f);
    }
 }
@@ -60,7 +62,6 @@ void FontRenderBatcher::render( F32 rot, const Point2F &offset )
       return;
 
    GFX->setStateBlock(mFontSB);
-   GFX->disableShaders();
    for(U32 i = 0; i < GFX->getNumSamplers(); i++)
       GFX->setTexture(i, NULL);
 
@@ -177,6 +178,7 @@ void FontRenderBatcher::render( F32 rot, const Point2F &offset )
    AssertFatal(currentPt <= mLength * 6, "FontRenderBatcher::render - too many verts for length of string!");
 
    GFX->setVertexBuffer(verts);
+   GFX->setupGenericShaders( GFXDevice::GSAddColorTexture );
 
    // Now do an optimal render!
    for( S32 i = 0; i < mSheets.size(); i++ )
@@ -186,8 +188,7 @@ void FontRenderBatcher::render( F32 rot, const Point2F &offset )
 
       if(!mSheets[i]->numChars )
          continue;
-
-      GFX->setupGenericShaders( GFXDevice::GSAddColorTexture );
+      
       GFX->setTexture( 0, mFont->getTextureHandle(i) );
       GFX->drawPrimitive(GFXTriangleList, mSheets[i]->startVertex, mSheets[i]->numChars * 2);
    }
@@ -215,12 +216,18 @@ void FontRenderBatcher::queueChar( UTF16 c, S32 &currentX, GFXVertexColor &curre
 
 FontRenderBatcher::SheetMarker & FontRenderBatcher::getSheetMarker( U32 sheetID )
 {
-   // Allocate if it doesn't exist...
-   if(mSheets.size() <= sheetID || !mSheets[sheetID])
+   // Add empty sheets up to and including the requested sheet if necessary
+   if (mSheets.size() <= sheetID)
    {
-      if(sheetID >= mSheets.size())
-         mSheets.setSize(sheetID+1);
+      S32 oldSize = mSheets.size();
+      mSheets.setSize( sheetID + 1 );
+      for ( S32 i = oldSize; i < mSheets.size(); i++ )
+         mSheets[i] = NULL;
+   }
 
+   // Allocate if it doesn't exist...
+   if (!mSheets[sheetID])
+   {
       S32 size = sizeof( SheetMarker) + mLength * sizeof( CharMarker );
       mSheets[sheetID] = (SheetMarker *)mStorage.alloc(size);
       mSheets[sheetID]->numChars = 0;

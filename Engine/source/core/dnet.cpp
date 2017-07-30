@@ -25,6 +25,7 @@
 #include "core/strings/stringFunctions.h"
 
 #include "console/consoleTypes.h"
+#include "console/engineAPI.h"
 
 
 bool gLogToConsole = false;
@@ -49,14 +50,13 @@ static const char *packetTypeNames[] =
 //-----------------------------------------------------------------
 //-----------------------------------------------------------------
 //-----------------------------------------------------------------
-ConsoleFunction(DNetSetLogging, void, 2, 2, "(bool enabled)"
+DefineConsoleFunction( DNetSetLogging, void, (bool enabled), , "(bool enabled)"
    "@brief Enables logging of the connection protocols\n\n"
    "When enabled a lot of network debugging information is sent to the console.\n"
    "@param enabled True to enable, false to disable\n"
    "@ingroup Networking")
 {
-   TORQUE_UNUSED(argc);
-   gLogToConsole = dAtob(argv[1]);
+   gLogToConsole = enabled;
 }
 
 ConnectionProtocol::ConnectionProtocol()
@@ -66,6 +66,7 @@ ConnectionProtocol::ConnectionProtocol()
    mLastSendSeq = 0; // start sending at 1
    mAckMask = 0;
    mLastRecvAckAck = 0;
+   mConnectionEstablished = false;
 }
 void ConnectionProtocol::buildSendPacketHeader(BitStream *stream, S32 packetType)
 {
@@ -79,11 +80,19 @@ void ConnectionProtocol::buildSendPacketHeader(BitStream *stream, S32 packetType
 
    stream->writeFlag(true);
    stream->writeInt(mConnectSequence & 1, 1);
-   stream->writeInt(mLastSendSeq, 9);
-   stream->writeInt(mLastSeqRecvd, 9);
-   stream->writeInt(packetType, 2);
-   stream->writeInt(ackByteCount, 3);
-   stream->writeInt(mAckMask, ackByteCount * 8);
+   stream->writeInt(mLastSendSeq & 0x1FF, 9);
+   stream->writeInt(mLastSeqRecvd & 0x1FF, 9);
+   stream->writeInt(packetType & 0x3, 2);
+   stream->writeInt(ackByteCount & 0x7, 3);
+   U32 bitmask = ~(0xFFFFFFFF << (ackByteCount*8));
+   if(ackByteCount == 4)
+   {
+      // Performing a bit shift that is the same size as the variable being shifted
+      // is undefined in the C/C++ standard.  Handle that exception here when
+      // ackByteCount*8 == 4*8 == 32
+      bitmask = 0xFFFFFFFF;
+   }
+   stream->writeInt(mAckMask & bitmask, ackByteCount * 8);
 
    // if we're resending this header, we can't advance the
    // sequence recieved (in case this packet drops and the prev one

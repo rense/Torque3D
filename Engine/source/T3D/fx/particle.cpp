@@ -21,6 +21,7 @@
 //-----------------------------------------------------------------------------
 #include "particle.h"
 #include "console/consoleTypes.h"
+#include "console/typeValidators.h"
 #include "core/stream/bitStream.h"
 #include "math/mRandom.h"
 #include "math/mathIO.h"
@@ -65,11 +66,11 @@ ConsoleDocClass( ParticleData,
    "@see ParticleEmitterNode\n"
 );
 
-static const float sgDefaultWindCoefficient = 0.0f;
-static const float sgDefaultConstantAcceleration = 0.f;
-static const float sgDefaultSpinSpeed = 1.f;
-static const float sgDefaultSpinRandomMin = 0.f;
-static const float sgDefaultSpinRandomMax = 0.f;
+static const F32 sgDefaultWindCoefficient = 0.0f;
+static const F32 sgDefaultConstantAcceleration = 0.f;
+static const F32 sgDefaultSpinSpeed = 1.f;
+static const F32 sgDefaultSpinRandomMin = 0.f;
+static const F32 sgDefaultSpinRandomMax = 0.f;
 
 
 //-----------------------------------------------------------------------------
@@ -127,18 +128,22 @@ ParticleData::~ParticleData()
    }
 }
 
+FRangeValidator dragCoefFValidator(0.f, 5.f);
+FRangeValidator gravCoefFValidator(-10.f, 10.f);
+FRangeValidator spinRandFValidator(-1000.f, 1000.f);
+
 //-----------------------------------------------------------------------------
 // initPersistFields
 //-----------------------------------------------------------------------------
 void ParticleData::initPersistFields()
 {
-   addField( "dragCoefficient", TYPEID< F32 >(), Offset(dragCoefficient, ParticleData),
+   addFieldV( "dragCoefficient", TYPEID< F32 >(), Offset(dragCoefficient, ParticleData), &dragCoefFValidator,
       "Particle physics drag amount." );
    addField( "windCoefficient", TYPEID< F32 >(), Offset(windCoefficient, ParticleData),
       "Strength of wind on the particles." );
-   addField( "gravityCoefficient", TYPEID< F32 >(), Offset(gravityCoefficient, ParticleData),
+   addFieldV( "gravityCoefficient", TYPEID< F32 >(), Offset(gravityCoefficient, ParticleData), &gravCoefFValidator,
       "Strength of gravity on the particles." );
-   addField( "inheritedVelFactor", TYPEID< F32 >(), Offset(inheritedVelFactor, ParticleData),
+   addFieldV( "inheritedVelFactor", TYPEID< F32 >(), Offset(inheritedVelFactor, ParticleData), &CommonValidators::NormalizedFloat,
       "Amount of emitter velocity to add to particle initial velocity." );
    addField( "constantAcceleration", TYPEID< F32 >(), Offset(constantAcceleration, ParticleData),
       "Constant acceleration to apply to this particle." );
@@ -148,10 +153,10 @@ void ParticleData::initPersistFields()
       "Variance in lifetime of particle, from 0 - lifetimeMS." );
    addField( "spinSpeed", TYPEID< F32 >(), Offset(spinSpeed, ParticleData),
       "Speed at which to spin the particle." );
-   addField( "spinRandomMin", TYPEID< F32 >(), Offset(spinRandomMin, ParticleData),
-      "Minimum allowed spin speed of this particle, between -10000 and spinRandomMax." );
-   addField( "spinRandomMax", TYPEID< F32 >(), Offset(spinRandomMax, ParticleData),
-      "Maximum allowed spin speed of this particle, between spinRandomMin and 10000." );
+   addFieldV( "spinRandomMin", TYPEID< F32 >(), Offset(spinRandomMin, ParticleData), &spinRandFValidator,
+      "Minimum allowed spin speed of this particle, between -1000 and spinRandomMax." );
+   addFieldV( "spinRandomMax", TYPEID< F32 >(), Offset(spinRandomMax, ParticleData), &spinRandFValidator,
+      "Maximum allowed spin speed of this particle, between spinRandomMin and 1000." );
    addField( "useInvAlpha", TYPEID< bool >(), Offset(useInvAlpha, ParticleData),
       "@brief Controls how particles blend with the scene.\n\n"
       "If true, particles blend like ParticleBlendStyle NORMAL, if false, "
@@ -199,7 +204,8 @@ void ParticleData::initPersistFields()
       "@brief Particle RGBA color keyframe values.\n\n"
       "The particle color will linearly interpolate between the color/time keys "
       "over the lifetime of the particle." );
-   addField( "sizes", TYPEID< F32 >(), Offset(sizes, ParticleData), PDC_NUM_KEYS,
+   addProtectedField( "sizes", TYPEID< F32 >(), Offset(sizes, ParticleData), &protectedSetSizes, 
+      &defaultProtectedGetFn, PDC_NUM_KEYS,
       "@brief Particle size keyframe values.\n\n"
       "The particle size will linearly interpolate between the size/time keys "
       "over the lifetime of the particle." );
@@ -342,6 +348,22 @@ void ParticleData::unpackData(BitStream* stream)
    }
 }
 
+bool ParticleData::protectedSetSizes( void *object, const char *index, const char *data) 
+{
+   ParticleData *pData = static_cast<ParticleData*>( object );
+   F32 val = dAtof(data);
+   U32 i;
+
+   if (!index)
+      return (val >= 0.f && val <= MaxParticleSize);
+   else
+      i = dAtoui(index);
+
+   pData->sizes[i] = mClampF( val, 0.f, MaxParticleSize );
+
+   return false;
+}
+
 bool ParticleData::protectedSetTimes( void *object, const char *index, const char *data) 
 {
    ParticleData *pData = static_cast<ParticleData*>( object );
@@ -349,13 +371,13 @@ bool ParticleData::protectedSetTimes( void *object, const char *index, const cha
    U32 i;
 
    if (!index)
-      i = 0;
+      return (val >= 0.f && val <= 1.f);
    else
       i = dAtoui(index);
 
    pData->times[i] = mClampF( val, 0.f, 1.f );
 
-   return true;
+   return false;
 }
 
 //-----------------------------------------------------------------------------
@@ -378,11 +400,11 @@ bool ParticleData::onAdd()
       Con::warnf(ConsoleLogEntry::General, "ParticleData(%s) lifetimeVariance >= lifetime", getName());
       lifetimeVarianceMS = lifetimeMS - 1;
    }
-   if (spinSpeed > 10000.0 || spinSpeed < -10000.0) {
+   if (spinSpeed > 1000.f || spinSpeed < -1000.f) {
       Con::warnf(ConsoleLogEntry::General, "ParticleData(%s) spinSpeed invalid", getName());
       return false;
    }
-   if (spinRandomMin > 10000.0 || spinRandomMin < -10000.0) {
+   if (spinRandomMin > 1000.f || spinRandomMin < -1000.f) {
       Con::warnf(ConsoleLogEntry::General, "ParticleData(%s) spinRandomMin invalid", getName());
       spinRandomMin = -360.0;
       return false;
@@ -392,7 +414,7 @@ bool ParticleData::onAdd()
       spinRandomMin = spinRandomMax - (spinRandomMin - spinRandomMax );
       return false;
    }
-   if (spinRandomMax > 10000.0 || spinRandomMax < -10000.0) {
+   if (spinRandomMax > 1000.f || spinRandomMax < -1000.f) {
       Con::warnf(ConsoleLogEntry::General, "ParticleData(%s) spinRandomMax invalid", getName());
       spinRandomMax = 360.0;
       return false;
@@ -600,7 +622,7 @@ bool ParticleData::reload(char errorBuffer[256])
 	}
    /*
    numFrames = 0;
-   for( int i=0; i<PDC_MAX_TEX; i++ )
+   for( S32 i=0; i<PDC_MAX_TEX; i++ )
    {
       if( textureNameList[i] && textureNameList[i][0] )
       {

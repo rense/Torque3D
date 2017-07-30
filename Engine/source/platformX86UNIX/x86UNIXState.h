@@ -25,7 +25,7 @@
 //#include "platformX86UNIX/platformGL.h"
 #include "core/strings/stringFunctions.h"
 
-#ifndef DEDICATED
+#ifndef TORQUE_DEDICATED
 #include <X11/Xlib.h> // for Display, Window and other X mojo
 #else
 #define Display int
@@ -67,13 +67,13 @@ class x86UNIXPlatformState
       // loop runs in a separate thread.  If you need the display pointer,
       // use the DisplayPtrManager class.  See the clipboard functions in 
       // x86unixinput.cc for an example.
-      Display *getDisplayPointer() { return mDisplay; }
+      //Display *getDisplayPointer() { return mDisplay; }
 
    public:
       U32      currentTime;
 
-      void setDisplayPointer( Display *displayPointer ) 
-          { mDisplay = displayPointer; }
+      void setDisplayPointer( Display *displayPointer )     { mDisplay = displayPointer; }
+      Display* getDisplayPointer()                          { return mDisplay; }
 
       void setScreenNumber( int newNumber ) { mScreenNumber = newNumber; }
       int getScreenNumber() { return mScreenNumber; }
@@ -225,7 +225,7 @@ class DisplayPtrManager
    private:
       Display* openDisplay()
       {
-#ifndef DEDICATED
+#ifndef TORQUE_DEDICATED
          mDisplay = XOpenDisplay(NULL);
          if (mDisplay != NULL)
             mOpenedDisplay = true;
@@ -237,7 +237,7 @@ class DisplayPtrManager
       {
          if (mOpenedDisplay)
          {
-#ifndef DEDICATED
+#ifndef TORQUE_DEDICATED
             XCloseDisplay(mDisplay);
             mDisplay = NULL;
             mOpenedDisplay = false;

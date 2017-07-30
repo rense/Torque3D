@@ -26,21 +26,21 @@
 
 datablock SFXProfile(RyderFireSound)
 {
-   filename = "art/sound/weapons/wpn_Ryder_fire";
+   filename = "art/sound/weapons/wpn_ryder_fire";
    description = AudioClose3D;
    preload = true;
 };
 
 datablock SFXProfile(RyderReloadSound)
 {
-   filename = "art/sound/weapons/wpn_Ryder_reload";
+   filename = "art/sound/weapons/wpn_ryder_reload";
    description = AudioClose3D;
    preload = true;
 };
 
 datablock SFXProfile(RyderSwitchinSound)
 {
-   filename = "art/sound/weapons/wpn_Ryder_switchin";
+   filename = "art/sound/weapons/wpn_ryder_switchin";
    description = AudioClose3D;
    preload = true;
 };
@@ -192,9 +192,9 @@ datablock ShapeBaseImageData(RyderWeaponImage)
    lightBrightness = 2;
 
    // Shake camera while firing.
-   shakeCamera = false;
-   camShakeFreq = "0 0 0";
-   camShakeAmp = "0 0 0";
+   shakeCamera = "1";
+   camShakeFreq = "10 10 10";
+   camShakeAmp = "5 5 5";
 
    // Images have a state system which controls how the animations
    // are run, which sounds are played, script callbacks, etc. This
@@ -361,4 +361,5 @@ datablock ShapeBaseImageData(RyderWeaponImage)
    stateSequenceTransitionOut[13]   = true;
    stateAllowImageChange[13]        = false;
    stateSequence[13]                = "sprint";
+   camShakeDuration = "0.2";
 };

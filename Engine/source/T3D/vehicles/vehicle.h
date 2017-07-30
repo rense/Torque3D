@@ -107,6 +107,10 @@ struct VehicleData: public ShapeBaseData
    F32 jetEnergyDrain;        ///< Energy drain/tick
    F32 minJetEnergy;
 
+   F32 steeringReturn;
+   F32 steeringReturnSpeedScale;
+   bool powerSteering;
+
    ParticleEmitterData * dustEmitter;
    S32 dustID;
    F32 triggerDustHeight;  ///< height vehicle has to be under to kick up dust
@@ -123,6 +127,8 @@ struct VehicleData: public ShapeBaseData
    F32 splashFreqMod;
    F32 splashVelEpsilon;
 
+   bool enablePhysicsRep;
+
    //
    VehicleData();
    bool preload(bool server, String &errorStr);
@@ -138,6 +144,7 @@ struct VehicleData: public ShapeBaseData
 
 
 //----------------------------------------------------------------------------
+class PhysicsBody;
 
 class Vehicle: public ShapeBase
 {
@@ -173,6 +180,8 @@ class Vehicle: public ShapeBase
       Point3F cameraRotVec;
    };
 
+   PhysicsBody *mPhysicsRep;
+
    StateDelta mDelta;
    S32 mPredictionCount;            ///< Number of ticks to predict
    VehicleData* mDataBlock;
@@ -198,7 +207,7 @@ class Vehicle: public ShapeBase
    CollisionList mContacts;
    Rigid mRigid;
    ShapeBaseConvex mConvex;
-   int restCount;
+   S32 restCount;
 
    SimObjectPtr<ParticleEmitter> mDustEmitterList[VehicleData::VC_NUM_DUST_EMITTERS];
    SimObjectPtr<ParticleEmitter> mDamageEmitterList[VehicleData::VC_NUM_DAMAGE_EMITTERS];
@@ -257,6 +266,8 @@ public:
    void processTick(const Move *move);
    bool onAdd();
    void onRemove();
+
+   void _createPhysics();
 
    /// Interpolates between move ticks @see processTick
    /// @param   dt   Change in time between the last call and this call to the function

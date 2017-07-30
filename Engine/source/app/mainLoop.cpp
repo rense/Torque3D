@@ -61,12 +61,16 @@
 // For the TickMs define... fix this for T2D...
 #include "T3D/gameBase/processList.h"
 
-#ifdef TORQUE_DEMO_PURCHASE
-#include "demo/pestTimer/pestTimer.h"
-#endif
-
 #ifdef TORQUE_ENABLE_VFS
 #include "platform/platformVFS.h"
+#endif
+
+#ifndef _MODULE_MANAGER_H
+#include "module/moduleManager.h"
+#endif
+
+#ifndef _ASSET_MANAGER_H_
+#include "assets/assetManager.h"
 #endif
 
 DITTS( F32, gTimeScale, 1.0 );
@@ -241,6 +245,16 @@ void StandardMainLoop::init()
    DebugOutputConsumer::init();
 #endif
 
+   // init Filesystem first, so we can actually log errors for all components that follow
+   Platform::FS::InstallFileSystems(); // install all drives for now until we have everything using the volume stuff
+   Platform::FS::MountDefaults();
+
+   // Set our working directory.
+   Torque::FS::SetCwd( "game:/" );
+
+   // Set our working directory.
+   Platform::setCurrentDirectory( Platform::getMainDotCsDir() );
+
    Processor::init();
    Math::init();
    Platform::init();    // platform specific initialization
@@ -251,7 +265,7 @@ void StandardMainLoop::init()
 
    // Initialize modules.
    
-   ModuleManager::initializeSystem();
+   EngineModuleManager::initializeSystem();
          
    // Initialise ITickable.
 #ifdef TORQUE_TGB_ONLY
@@ -282,6 +296,15 @@ void StandardMainLoop::init()
 	Con::addVariable("MiniDump::Params", TypeString, &gMiniDumpParams);
 	Con::addVariable("MiniDump::ExecDir", TypeString, &gMiniDumpExecDir);
 #endif
+
+   // Register the module manager.
+   ModuleDatabase.registerObject("ModuleDatabase");
+
+   // Register the asset database.
+   AssetDatabase.registerObject("AssetDatabase");
+
+   // Register the asset database as a module listener.
+   ModuleDatabase.addListener(&AssetDatabase);
    
    ActionMap* globalMap = new ActionMap;
    globalMap->registerObject("GlobalActionMap");
@@ -291,14 +314,13 @@ void StandardMainLoop::init()
    tm = new TimeManager;
    tm->timeEvent.notify(&::processTimeEvent);
    
+   // Start up the Input Event Manager
+   INPUTMGR->start();
+
    Sampler::init();
 
    // Hook in for UDP notification
-   Net::smPacketReceive.notify(GNet, &NetInterface::processPacketReceiveEvent);
-
-   #ifdef TORQUE_DEMO_PURCHASE
-   PestTimerinit();
-   #endif
+   Net::getPacketReceiveEvent().notify(GNet, &NetInterface::processPacketReceiveEvent);
 
    #ifdef TORQUE_DEBUG_GUARD
       Memory::flagCurrentAllocs( Memory::FLAG_Static );
@@ -307,12 +329,21 @@ void StandardMainLoop::init()
 
 void StandardMainLoop::shutdown()
 {
+   // Stop the Input Event Manager
+   INPUTMGR->stop();
+
    delete tm;
    preShutdown();
+
+   // Unregister the module database.
+   ModuleDatabase.unregisterObject();
+
+   // Unregister the asset database.
+   AssetDatabase.unregisterObject();
    
    // Shut down modules.
    
-   ModuleManager::shutdownSystem();
+   EngineModuleManager::shutdownSystem();
    
    ThreadPool::GlobalThreadPool::deleteSingleton();
 
@@ -380,15 +411,6 @@ bool StandardMainLoop::handleCommandLine( S32 argc, const char **argv )
    for (i = 0; i < argc; i++)
       Con::setVariable(avar("Game::argv%d", i), argv[i]);
 
-   Platform::FS::InstallFileSystems(); // install all drives for now until we have everything using the volume stuff
-   Platform::FS::MountDefaults();
-
-   // Set our working directory.
-   Torque::FS::SetCwd( "game:/" );
-
-   // Set our working directory.
-   Platform::setCurrentDirectory( Platform::getMainDotCsDir() );
-
 #ifdef TORQUE_PLAYER
    if(argc > 2 && dStricmp(argv[1], "-project") == 0)
    {
@@ -453,7 +475,7 @@ bool StandardMainLoop::handleCommandLine( S32 argc, const char **argv )
 #endif
          success = str.open(defaultScriptName, Torque::FS::File::Read);
 
-#if defined( TORQUE_DEBUG ) && defined (TORQUE_TOOLS) && !defined( _XBOX )
+#if defined( TORQUE_DEBUG ) && defined (TORQUE_TOOLS) && !defined(TORQUE_DEDICATED) && !defined( _XBOX )
       if (!success)
       {
          OpenFileDialog ofd;
@@ -582,15 +604,11 @@ bool StandardMainLoop::doMainLoop()
             lastFocus = newFocus;
          }
          
-#ifndef TORQUE_OS_MAC         
          // under the web plugin do not sleep the process when the child window loses focus as this will cripple the browser perfomance
          if (!Platform::getWebDeployment())
             tm->setBackground(!newFocus);
          else
             tm->setBackground(false);
-#else
-         tm->setBackground(false);
-#endif
       }
       else
       {
@@ -606,14 +624,14 @@ bool StandardMainLoop::doMainLoop()
       ThreadPool::processMainThreadWorkItems();
       Sampler::endFrame();
       PROFILE_END_NAMED(MainLoop);
-
-	  #ifdef TORQUE_DEMO_PURCHASE
-	  CheckTimer();
-	  CheckBlocker();
-	  #endif
    }
    
    return keepRunning;
+}
+
+S32 StandardMainLoop::getReturnStatus()
+{
+   return Process::getReturnStatus();
 }
 
 void StandardMainLoop::setRestart(bool restart )

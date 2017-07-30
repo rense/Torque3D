@@ -24,7 +24,7 @@ $PE_guielement_ext_colorpicker = "18 18";
    canSaveDynamicFields = "0";
    Enabled = "1";
    isContainer = "1";
-   Profile = "GuiWindowProfile";
+   Profile = "ToolsGuiWindowProfile";
    Position = firstWord($pref::Video::mode) - 209
       SPC getWord(EditorGuiToolbar.extent, 1) -1;
    Extent = "210 696";
@@ -55,7 +55,7 @@ $PE_guielement_ext_colorpicker = "18 18";
       canSaveDynamicFields = "0";
       isContainer = "1";
       internalName = "EditorTabBook";
-      Profile = "GuiTabBookProfile";
+      Profile = "ToolsGuiTabBookProfile";
       HorizSizing = "width";
       VertSizing = "height";
       position = "6 27";
@@ -79,7 +79,7 @@ $PE_guielement_ext_colorpicker = "18 18";
          canSaveDynamicFields = "0";
          Enabled = "1";
          isContainer = "1";
-         Profile = "EditorTabPage";
+         Profile = "ToolsGuiEditorTabPage";
          HorizSizing = "width";
          VertSizing = "height";
          position = "0 19";
@@ -101,7 +101,7 @@ $PE_guielement_ext_colorpicker = "18 18";
             canSaveDynamicFields = "0";
             Enabled = "1";
             isContainer = "1";
-            Profile = "GuiScrollProfile";
+            Profile = "ToolsGuiScrollProfile";
             HorizSizing = "width";
             VertSizing = "height";
             Position = "0 0";
@@ -126,7 +126,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                canSaveDynamicFields = "0";
                Enabled = "1";
                isContainer = "1";
-               Profile = "GuiDefaultProfile";
+               Profile = "ToolsGuiDefaultProfile";
                HorizSizing = "width";
                VertSizing = "bottom";
                Position = "1 3";
@@ -135,7 +135,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                canSave = "1";
                isDecoy = "0";
                Visible = "1";
-               tooltipprofile = "GuiToolTipProfile";
+               tooltipprofile = "ToolsGuiToolTipProfile";
                hovertime = "1000";
                
                new GuiControl(PEE_EmitterSelector_Control){ // PEE_EmitterSelector
@@ -151,7 +151,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "0";
-                     Profile = "GuiPopUpMenuProfile";
+                     Profile = "ToolsGuiPopUpMenuProfile";
                      HorizSizing = "width";
                      VertSizing = "bottom";
                      position = "4 4";
@@ -201,7 +201,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "0";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "left";
                      VertSizing = "bottom";
                      position = "131 5";
@@ -214,14 +214,14 @@ $PE_guielement_ext_colorpicker = "18 18";
                      groupNum = "-1";
                      buttonType = "PushButton";
                      useMouseEvents = "0";
-                     bitmap = "core/art/gui/images/new";
+                     bitmap = "tools/gui/images/new";
                      tooltip = "Create New Emitter";
                   };
                   new GuiBitmapButtonCtrl() {
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "0";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "left";
                      VertSizing = "bottom";
                      position = "147 5";
@@ -242,7 +242,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "0";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "left";
                      VertSizing = "bottom";
                      position = "164 5";
@@ -282,7 +282,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "1";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "width";
                      VertSizing = "bottom";
                      Position = "1 3";
@@ -291,7 +291,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSave = "1";
                      isDecoy = "0";
                      Visible = "1";
-                     tooltipprofile = "GuiToolTipProfile";
+                     tooltipprofile = "ToolsGuiToolTipProfile";
                      hovertime = "1000";
                      
                      new GuiControl(){ // Emitter PEE_lifetimeMS
@@ -306,7 +306,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -329,7 +329,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -346,7 +346,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEE_lifetimeMS_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            altCommand = "$ThisControl.getParent().updateFromChild($ThisControl); PE_EmitterEditor.updateLifeFields( false, $ThisControl.getValue() );";
@@ -367,7 +367,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -390,7 +390,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -407,7 +407,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEE_lifetimeVarianceMS_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -424,7 +424,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -433,7 +433,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiCheckBoxCtrl() {
                            internalName = "PEE_infiniteLoop";
-                           Profile = "GuiCheckBoxProfile";
+                           Profile = "ToolsGuiCheckBoxProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_checkbox;
@@ -442,12 +442,12 @@ $PE_guielement_ext_colorpicker = "18 18";
                            text = "";
                         };
                      };
-                     
+                        
                      new GuiControl(){ // Spacer ----------------------------
                         isContainer = "1"; HorizSizing = "width"; Position = "0 0"; Extent = "194 8";
                         new GuiBitmapCtrl(){
                            position="0 3"; extent ="188 2"; HorizSizing = "width";
-                           bitmap ="core/art/gui/images/separator-v"; 
+                           bitmap ="tools/gui/images/separator-v"; 
                         };
                      };// end spacer ----------------------------------------
                      
@@ -460,7 +460,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -472,7 +472,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -489,7 +489,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEE_ejectionPeriodMS_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -506,7 +506,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -518,7 +518,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -535,12 +535,39 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEE_periodVarianceMS_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
                            Extent = $PE_guielement_ext_value;
                            altCommand = "$ThisControl.getParent().updateFromChild($ThisControl); PE_EmitterEditor.updateAmountFields( true, $ThisControl.getValue() );";
+                        };
+                     };
+                     
+                     new GuiControl(){ // Particle glow
+                        isContainer = "1";
+                        HorizSizing = "width";
+                        VertSizing = "bottom";
+                        Position = $PE_guielement_pos_single_container ;
+                        Extent = $PE_guielement_ext_single_container ;
+                        
+                        new GuiTextCtrl() {
+                           Profile = "ToolsGuiTextProfile";
+                           HorizSizing = "width";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_name;
+                           Extent = $PE_guielement_ext_checkbox_name;
+                           text = "Glow";
+                        };
+                        new GuiCheckBoxCtrl() {
+                           internalName = "PEE_glow";
+                           Profile = "ToolsGuiCheckBoxProfile";
+                           HorizSizing = "left";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_checkbox;
+                           Extent = $PE_guielement_ext_checkbox;
+                           Command = "PE_EmitterEditor.updateEmitter( \"glow\", $ThisControl.getValue());";
+                           text = "";
                         };
                      };
                   };// end stack
@@ -568,7 +595,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "1";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "width";
                      VertSizing = "bottom";
                      Position = "1 3";
@@ -577,7 +604,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSave = "1";
                      isDecoy = "0";
                      Visible = "1";
-                     tooltipprofile = "GuiToolTipProfile";
+                     tooltipprofile = "ToolsGuiToolTipProfile";
                      hovertime = "1000";
                      
                      new GuiControl(){ // Emitter speed
@@ -589,7 +616,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -601,7 +628,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -618,7 +645,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEE_ejectionVelocity_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -635,7 +662,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -647,7 +674,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -664,7 +691,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEE_velocityVariance_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -677,7 +704,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         isContainer = "1"; HorizSizing = "width"; Position = "0 0"; Extent = "194 8";
                         new GuiBitmapCtrl(){
                            position="0 3"; extent ="188 2"; HorizSizing = "width";
-                           bitmap ="core/art/gui/images/separator-v"; 
+                           bitmap ="tools/gui/images/separator-v"; 
                         };
                      };// end spacer ----------------------------------------
                      
@@ -689,7 +716,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -698,7 +725,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiCheckBoxCtrl() {
                            internalName = "PEE_orientParticles";
-                           Profile = "GuiCheckBoxProfile";
+                           Profile = "ToolsGuiCheckBoxProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_checkbox;
@@ -715,7 +742,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -724,7 +751,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiCheckBoxCtrl() {
                            internalName = "PEE_alignParticles";
-                           Profile = "GuiCheckBoxProfile";
+                           Profile = "ToolsGuiCheckBoxProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_checkbox;
@@ -741,7 +768,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -750,7 +777,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEE_alignDirection";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_textedit;
@@ -784,7 +811,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "1";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "width";
                      VertSizing = "bottom";
                      Position = "1 3";
@@ -793,7 +820,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSave = "1";
                      isDecoy = "0";
                      Visible = "1";
-                     tooltipprofile = "GuiToolTipProfile";
+                     tooltipprofile = "ToolsGuiToolTipProfile";
                      hovertime = "1000";
                      
                      new GuiControl(){ // Emitter Angle Min
@@ -809,7 +836,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            position = getWord($PE_guielement_pos_slider,0)+4 SPC "0";
                            Extent = "2 18";
                            minExtent = "0 0";
-                           bitmap = "core/art/gui/images/separator-h";
+                           bitmap = "tools/gui/images/separator-h";
                            tooltip = "0 Degrees ( Up )";
                         };
                         new GuiBitmapCtrl(){ // 90 Degrees
@@ -817,7 +844,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            position = getWord($PE_guielement_pos_slider,0)+mCeil(getWord($PE_guielement_ext_slider,0)/4)+1 SPC "0";
                            Extent = "2 18";
                            minExtent = "0 0";
-                           bitmap = "core/art/gui/images/separator-h";
+                           bitmap = "tools/gui/images/separator-h";
                            tooltip = "90 Degrees ( Left )";
                         };
                         new GuiBitmapCtrl(){ // 180 Degrees
@@ -825,7 +852,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            position = getWord($PE_guielement_pos_slider,0)+mCeil(getWord($PE_guielement_ext_slider,0)/2)-1 SPC "0";
                            Extent = "2 18";
                            minExtent = "0 0";
-                           bitmap = "core/art/gui/images/separator-h";
+                           bitmap = "tools/gui/images/separator-h";
                            tooltip = "180 Degrees ( Down )";
                         };
                         new GuiBitmapCtrl(){ // 270 Degrees
@@ -833,7 +860,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            position = getWord($PE_guielement_pos_slider,0)+mCeil(getWord($PE_guielement_ext_slider,0)/2+mCeil(getWord($PE_guielement_ext_slider,0)/4))-4 SPC "0";
                            Extent = "2 18";
                            minExtent = "0 0";
-                           bitmap = "core/art/gui/images/separator-h";
+                           bitmap = "tools/gui/images/separator-h";
                            tooltip = "270 Degrees ( Right )";
                         };
                         new GuiBitmapCtrl(){ // 360 Degrees
@@ -841,12 +868,12 @@ $PE_guielement_ext_colorpicker = "18 18";
                            position = getWord($PE_guielement_pos_slider,0)+mCeil(getWord($PE_guielement_ext_slider,0))-5 SPC "0";
                            Extent = "2 18";
                            minExtent = "0 0";
-                           bitmap = "core/art/gui/images/separator-h";
+                           bitmap = "tools/gui/images/separator-h";
                            tooltip = "360 Degrees ( Up )";
                         };
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -858,7 +885,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -875,7 +902,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalname = "PEE_thetaMin_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -896,7 +923,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            position = getWord($PE_guielement_pos_slider,0)+4 SPC "0";
                            Extent = "2 18";
                            minExtent = "0 0";
-                           bitmap = "core/art/gui/images/separator-h";
+                           bitmap = "tools/gui/images/separator-h";
                            tooltip = "0 Degrees ( Up )";
                         };
                         new GuiBitmapCtrl(){ // 90 Degrees
@@ -904,7 +931,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            position = getWord($PE_guielement_pos_slider,0)+mCeil(getWord($PE_guielement_ext_slider,0)/4)+1 SPC "0";
                            Extent = "2 18";
                            minExtent = "0 0";
-                           bitmap = "core/art/gui/images/separator-h";
+                           bitmap = "tools/gui/images/separator-h";
                            tooltip = "90 Degrees ( Left )";
                         };
                         new GuiBitmapCtrl(){ // 180 Degrees
@@ -912,7 +939,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            minExtent = "0 0";
                            position = getWord($PE_guielement_pos_slider,0)+mCeil(getWord($PE_guielement_ext_slider,0)/2)-1 SPC "0";
                            Extent = "2 18";
-                           bitmap = "core/art/gui/images/separator-h";
+                           bitmap = "tools/gui/images/separator-h";
                            tooltip = "180 Degrees ( Down )";
                         };
                         new GuiBitmapCtrl(){ // 270 Degrees
@@ -920,7 +947,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            position = getWord($PE_guielement_pos_slider,0)+mCeil(getWord($PE_guielement_ext_slider,0)/2+mCeil(getWord($PE_guielement_ext_slider,0)/4))-4 SPC "0";
                            Extent = "2 18";
                            minExtent = "0 0";
-                           bitmap = "core/art/gui/images/separator-h";
+                           bitmap = "tools/gui/images/separator-h";
                            tooltip = "270 Degrees ( Right )";
                         };
                         new GuiBitmapCtrl(){ // 360 Degrees
@@ -928,12 +955,12 @@ $PE_guielement_ext_colorpicker = "18 18";
                            position = getWord($PE_guielement_pos_slider,0)+mCeil(getWord($PE_guielement_ext_slider,0))-5 SPC "0";
                            Extent = "2 18";
                            minExtent = "0 0";
-                           bitmap = "core/art/gui/images/separator-h";
+                           bitmap = "tools/gui/images/separator-h";
                            tooltip = "360 Degrees ( Up )";
                         };
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -945,7 +972,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -962,7 +989,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEE_thetaMax_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -975,7 +1002,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         isContainer = "1"; HorizSizing = "width"; Position = "0 0"; Extent = "194 8";
                         new GuiBitmapCtrl(){
                            position="0 3"; extent ="188 2"; HorizSizing = "width";
-                           bitmap ="core/art/gui/images/separator-v"; 
+                           bitmap ="tools/gui/images/separator-v"; 
                         };
                      };// end spacer ----------------------------------------
                      
@@ -988,7 +1015,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1000,7 +1027,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -1017,7 +1044,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEE_phiVariance_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -1034,7 +1061,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1046,7 +1073,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -1063,13 +1090,59 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEE_ejectionOffset_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
                            Extent = $PE_guielement_ext_value;
                            altCommand = "$ThisControl.getParent().updateFromChild($ThisControl); PE_EmitterEditor.updateEmitter( \"ejectionOffset\", $ThisControl.getText());";
-                        };             
+                        };
+					 };
+                     new GuiControl(){ // Emitter Offset Variance
+                        class = "AggregateControl";
+                        isContainer = "1";
+                        HorizSizing = "width";
+                        VertSizing = "bottom";
+                        Position = $PE_guielement_pos_single_container ;
+                        Extent = $PE_guielement_ext_single_container ;
+                        
+                        new GuiTextCtrl() {
+                           Profile = "ToolsGuiTextProfile";
+                           HorizSizing = "width";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_name;
+                           Extent = $PE_guielement_ext_name;
+                           text = "OffsetVariance";
+                        };
+                        new GuiSliderCtrl(PEE_ejectionOffsetVariance) {
+                           internalName = "PEE_ejectionOffsetVariance_slider";
+                           canSaveDynamicFields = "0";
+                           Enabled = "1";
+                           isContainer = "0";
+                           Profile = "ToolsGuiSliderProfile";
+                           HorizSizing = "left";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_slider;
+                           Extent = $PE_guielement_ext_slider;
+                           MinExtent = "8 2";
+                           canSave = "1";
+                           Visible = "1";
+                           Command = "PE_EmitterEditor.updateEmitter( \"ejectionOffsetVariance\", $ThisControl.getValue(), true, true );";
+                           altCommand = "$ThisControl.getParent().updateFromChild($ThisControl); PE_EmitterEditor.updateEmitter( \"ejectionOffsetVariance\", $ThisControl.getValue(), true, false );";
+                           hovertime = "1000";
+                           range = "0 25";
+                           ticks = "0";
+                           value = "0";
+                        };
+                        new GuiTextEditCtrl() {
+                           internalName = "PEE_ejectionOffsetVariance_textEdit";
+                           Profile = "ToolsGuiTextEditProfile";
+                           HorizSizing = "left";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_value;
+                           Extent = $PE_guielement_ext_value;
+                           altCommand = "$ThisControl.getParent().updateFromChild($ThisControl); PE_EmitterEditor.updateEmitter( \"ejectionOffsetVariance\", $ThisControl.getText());";
+                        };               
                      };
                   }; // end stack
                }; // end "spread" rollout
@@ -1096,7 +1169,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "1";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "width";
                      VertSizing = "bottom";
                      Position = "1 3";
@@ -1105,7 +1178,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSave = "1";
                      isDecoy = "0";
                      Visible = "1";
-                     tooltipprofile = "GuiToolTipProfile";
+                     tooltipprofile = "ToolsGuiToolTipProfile";
                      hovertime = "1000";
                      
                      new GuiControl(PEE_EmitterParticle1){ // emmiter particle 1
@@ -1116,7 +1189,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1125,7 +1198,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiPopUpMenuCtrl(PEE_EmitterParticleSelector1) {
                            internalName = "PopUpMenu";
-                           Profile = "GuiPopUpMenuProfile";
+                           Profile = "ToolsGuiPopUpMenuProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_textedit;
@@ -1142,7 +1215,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1151,7 +1224,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiPopUpMenuCtrl(PEE_EmitterParticleSelector2) {
                            internalName = "PopUpMenu";
-                           Profile = "GuiPopUpMenuProfile";
+                           Profile = "ToolsGuiPopUpMenuProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_textedit;
@@ -1164,7 +1237,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiButtonProfile";
+                           Profile = "ToolsGuiButtonProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = "56 1";
@@ -1190,7 +1263,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1199,7 +1272,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiPopUpMenuCtrl(PEE_EmitterParticleSelector3) {
                            internalName = "PopUpMenu";
-                           Profile = "GuiPopUpMenuProfile";
+                           Profile = "ToolsGuiPopUpMenuProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_textedit;
@@ -1212,7 +1285,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiButtonProfile";
+                           Profile = "ToolsGuiButtonProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = "56 1";
@@ -1238,7 +1311,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1247,7 +1320,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiPopUpMenuCtrl(PEE_EmitterParticleSelector4) {
                            internalName = "PopUpMenu";
-                           Profile = "GuiPopUpMenuProfile";
+                           Profile = "ToolsGuiPopUpMenuProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_textedit;
@@ -1260,7 +1333,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiButtonProfile";
+                           Profile = "ToolsGuiButtonProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = "56 1";
@@ -1303,7 +1376,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "1";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "width";
                      VertSizing = "bottom";
                      Position = "1 3";
@@ -1312,7 +1385,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSave = "1";
                      isDecoy = "0";
                      Visible = "1";
-                     tooltipprofile = "GuiToolTipProfile";
+                     tooltipprofile = "ToolsGuiToolTipProfile";
                      hovertime = "1000";
                      
                      new GuiControl(){ // Blend type
@@ -1323,7 +1396,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1348,7 +1421,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1360,7 +1433,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -1378,7 +1451,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEE_softnessDistance_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -1395,7 +1468,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1407,7 +1480,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -1425,7 +1498,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEE_ambientFactor_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -1438,7 +1511,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         isContainer = "1"; HorizSizing = "width"; Position = "0 0"; Extent = "194 8";
                         new GuiBitmapCtrl(){
                            position="0 3"; extent ="188 2"; HorizSizing = "width";
-                           bitmap ="core/art/gui/images/separator-v"; 
+                           bitmap ="tools/gui/images/separator-v"; 
                         };
                      };// end spacer ----------------------------------------
                      
@@ -1450,7 +1523,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1459,7 +1532,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiCheckBoxCtrl() {
                            internalName = "PEE_softParticles";
-                           Profile = "GuiCheckBoxProfile";
+                           Profile = "ToolsGuiCheckBoxProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_checkbox;
@@ -1476,7 +1549,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1485,7 +1558,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiCheckBoxCtrl() {
                            internalName = "PEE_reverseOrder";
-                           Profile = "GuiCheckBoxProfile";
+                           Profile = "ToolsGuiCheckBoxProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_checkbox;
@@ -1502,7 +1575,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1511,7 +1584,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiCheckBoxCtrl(PEE_useEmitterSizes) {
                            internalName = "PEE_useEmitterSizes";
-                           Profile = "GuiCheckBoxProfile";
+                           Profile = "ToolsGuiCheckBoxProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_checkbox;
@@ -1528,7 +1601,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1537,7 +1610,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiCheckBoxCtrl(PEE_useEmitterColors) {
                            internalName = "PEE_useEmitterColors";
-                           Profile = "GuiCheckBoxProfile";
+                           Profile = "ToolsGuiCheckBoxProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_checkbox;
@@ -1555,7 +1628,7 @@ $PE_guielement_ext_colorpicker = "18 18";
          canSaveDynamicFields = "0";
          Enabled = "1";
          isContainer = "1";
-         Profile = "EditorTabPage";
+         Profile = "ToolsGuiEditorTabPage";
          HorizSizing = "width";
          VertSizing = "height";
          position = "0 19";
@@ -1577,7 +1650,7 @@ $PE_guielement_ext_colorpicker = "18 18";
             canSaveDynamicFields = "0";
             Enabled = "1";
             isContainer = "1";
-            Profile = "GuiScrollProfile";
+            Profile = "ToolsGuiScrollProfile";
             HorizSizing = "width";
             VertSizing = "height";
             Position = "0 0";
@@ -1602,7 +1675,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                canSaveDynamicFields = "0";
                Enabled = "1";
                isContainer = "1";
-               Profile = "GuiDefaultProfile";
+               Profile = "ToolsGuiDefaultProfile";
                HorizSizing = "width";
                VertSizing = "bottom";
                Position = "1 3";
@@ -1611,7 +1684,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                canSave = "1";
                isDecoy = "0";
                Visible = "1";
-               tooltipprofile = "GuiToolTipProfile";
+               tooltipprofile = "ToolsGuiToolTipProfile";
                hovertime = "1000";
                
                new GuiControl(PEP_ParticleSelector_Control){ // PEP_ParticleSelector
@@ -1627,7 +1700,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "0";
-                     Profile = "GuiPopUpMenuProfile";
+                     Profile = "ToolsGuiPopUpMenuProfile";
                      HorizSizing = "width";
                      VertSizing = "bottom";
                      position = "4 4";
@@ -1677,7 +1750,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "0";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "left";
                      VertSizing = "bottom";
                      position = "131 5";
@@ -1689,7 +1762,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      groupNum = "-1";
                      buttonType = "PushButton";
                      useMouseEvents = "0";
-                     bitmap = "core/art/gui/images/new";
+                     bitmap = "tools/gui/images/new";
                      tooltip = "Add New Particle To Current Emitter";
                      useModifiers = "1";
                   };
@@ -1697,7 +1770,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "0";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "left";
                      VertSizing = "bottom";
                      position = "147 5";
@@ -1717,7 +1790,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "0";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "left";
                      VertSizing = "bottom";
                      position = "164 5";
@@ -1757,7 +1830,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "1";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "width";
                      VertSizing = "bottom";
                      Position = "1 3";
@@ -1766,11 +1839,11 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSave = "1";
                      isDecoy = "0";
                      Visible = "1";
-                     tooltipprofile = "GuiToolTipProfile";
+                     tooltipprofile = "ToolsGuiToolTipProfile";
                      hovertime = "1000";
                      
                      new GuiContainer(){ // particle texture map
-                        profile="GuiDefaultProfile";
+                        profile="ToolsGuiDefaultProfile";
                         isContainer = "1";
                         position = "0 0";
                         Extent = "185 52";
@@ -1780,7 +1853,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiDefaultProfile";
+                           Profile = "ToolsGuiDefaultProfile";
                            HorizSizing = "right";
                            VertSizing = "bottom";
                            position = "1 1";
@@ -1789,7 +1862,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSave = "1";
                            Visible = "1";
                            hovertime = "1000";
-                           bitmap = "tools/materialeditor/gui/unknownImage";
+                           bitmap = "tools/materialEditor/gui/unknownImage";
                            wrap = "0";
                         };
                         new GuiTextCtrl() {
@@ -1819,7 +1892,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiDefaultProfile";
+                           Profile = "ToolsGuiDefaultProfile";
                            HorizSizing = "right";
                            VertSizing = "bottom";
                            position = "1 1";
@@ -1828,7 +1901,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSave = "1";
                            Visible = "1";
                            Command = "";
-                           tooltipprofile = "GuiDefaultProfile";
+                           tooltipprofile = "ToolsGuiDefaultProfile";
                            ToolTip = "Edit Selected Particle.";
                            hovertime = "1000";
                            groupNum = "-1";
@@ -1840,7 +1913,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiDefaultProfile";
+                           Profile = "ToolsGuiDefaultProfile";
                            HorizSizing = "right";
                            VertSizing = "bottom";
                            position = "1 1";
@@ -1849,7 +1922,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSave = "1";
                            Visible = "1";
                            Command = "";
-                           tooltipprofile = "GuiDefaultProfile";
+                           tooltipprofile = "ToolsGuiDefaultProfile";
                            ToolTip = "Edit Selected Particle.";
                            hovertime = "1000";
                            groupNum = "-1";
@@ -1873,7 +1946,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = "55 31";
@@ -1892,7 +1965,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            maxLength = "1024";
                         };
                         new GuiButtonCtrl(){
-                           profile="GuiButtonProfile";
+                           profile="ToolsGuiButtonProfile";
                            text ="Edit";
                            HorizSizing = "left";
                            VertSizing = "bottom"; 
@@ -1908,7 +1981,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         //visible = false;
                         new GuiBitmapCtrl(){
                            position="0 3"; extent ="188 2"; HorizSizing = "width";
-                           bitmap ="core/art/gui/images/separator-v"; 
+                           bitmap ="tools/gui/images/separator-v"; 
                         };
                      };// end spacer ----------------------------------------
                      
@@ -1924,7 +1997,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -1947,7 +2020,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -1964,7 +2037,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_lifetimeMS_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -1984,7 +2057,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2007,7 +2080,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2024,7 +2097,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_lifetimeVarianceMS_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2057,7 +2130,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "1";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "width";
                      VertSizing = "bottom";
                      Position = "1 3";
@@ -2066,7 +2139,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSave = "1";
                      isDecoy = "0";
                      Visible = "1";
-                     tooltipprofile = "GuiToolTipProfile";
+                     tooltipprofile = "ToolsGuiToolTipProfile";
                      hovertime = "1000";
                      
                      new GuiControl(){ // Particle Initial speed
@@ -2078,7 +2151,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2090,7 +2163,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2107,7 +2180,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_inheritedVelFactor_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2124,7 +2197,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2136,7 +2209,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2153,7 +2226,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_constantAcceleration_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2166,7 +2239,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         isContainer = "1"; HorizSizing = "width"; Position = "0 0"; Extent = "194 8";
                         new GuiBitmapCtrl(){
                            position="0 3"; extent ="188 2"; HorizSizing = "width";
-                           bitmap ="core/art/gui/images/separator-v"; 
+                           bitmap ="tools/gui/images/separator-v"; 
                         };
                      };// end spacer ----------------------------------------
                      
@@ -2183,12 +2256,12 @@ $PE_guielement_ext_colorpicker = "18 18";
                            position = getWord($PE_guielement_pos_slider,0)+mCeil(getWord($PE_guielement_ext_slider,0)/2)-1 SPC "0";
                            Extent = "2 18";
                            minExtent = "0 0";
-                           bitmap = "core/art/gui/images/separator-h";
+                           bitmap = "tools/gui/images/separator-h";
                            tooltip = "0 Gravity";
                         };
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2200,7 +2273,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2217,7 +2290,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_gravityCoefficient_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2234,7 +2307,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2246,7 +2319,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2263,12 +2336,58 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_dragCoefficient_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
                            Extent = $PE_guielement_ext_value;
                            altCommand = "$ThisControl.getParent().updateFromChild($ThisControl); PE_ParticleEditor.updateParticle( \"dragCoefficient\", $ThisControl.getText());";
+                        };
+                     }; //End Particle Drag
+                     new GuiControl(){ // Particle Wind
+                        class = "AggregateControl";
+                        isContainer = "1";
+                        HorizSizing = "width";
+                        VertSizing = "bottom";
+                        Position = $PE_guielement_pos_single_container ;
+                        Extent = $PE_guielement_ext_single_container ;
+                        
+                        new GuiTextCtrl() {
+                           Profile = "ToolsGuiTextProfile";
+                           HorizSizing = "width";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_name;
+                           Extent = $PE_guielement_ext_name;
+                           text = "Wind Coeff";
+                        };
+                        new GuiSliderCtrl(PEP_windCoefficient) {
+                           internalName = "PEP_windCoefficient_slider";
+                           canSaveDynamicFields = "0";
+                           Enabled = "1";
+                           isContainer = "0";
+                           Profile = "ToolsGuiSliderProfile";
+                           HorizSizing = "left";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_slider;
+                           Extent = $PE_guielement_ext_slider;
+                           MinExtent = "8 2";
+                           canSave = "1";
+                           Visible = "1";
+                           Command = "PE_ParticleEditor.updateParticle( \"windCoefficient\", $ThisControl.getValue(), true, true );";
+                           altCommand = "$ThisControl.getParent().updateFromChild($ThisControl); PE_ParticleEditor.updateParticle( \"windCoefficient\", $ThisControl.getValue(), true, false );";
+                           hovertime = "1000";
+                           range = "0 1";
+                           ticks = "0";
+                           value = "0.298143";
+                        };
+                        new GuiTextEditCtrl() {
+                           internalName = "PEP_windCoefficient_textEdit";
+                           Profile = "ToolsGuiTextEditProfile";
+                           HorizSizing = "left";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_value;
+                           Extent = $PE_guielement_ext_value;
+                           altCommand = "$ThisControl.getParent().updateFromChild($ThisControl); PE_ParticleEditor.updateParticle( \"windCoefficient\", $ThisControl.getText());";
                         };
                      };
                   }; // end stack
@@ -2296,7 +2415,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "1";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "width";
                      VertSizing = "bottom";
                      Position = "1 3";
@@ -2305,7 +2424,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSave = "1";
                      isDecoy = "0";
                      Visible = "1";
-                     tooltipprofile = "GuiToolTipProfile";
+                     tooltipprofile = "ToolsGuiToolTipProfile";
                      hovertime = "1000";
                      
                      new GuiControl(){ // Particle spin Min
@@ -2321,12 +2440,12 @@ $PE_guielement_ext_colorpicker = "18 18";
                            position = getWord($PE_guielement_pos_slider,0)+mCeil(getWord($PE_guielement_ext_slider,0)/2)-1 SPC "0";
                            Extent = "2 18";
                            minExtent = "0 0";
-                           bitmap = "core/art/gui/images/separator-h";
+                           bitmap = "tools/gui/images/separator-h";
                            tooltip = "No Spin";
                         };
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2338,7 +2457,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2355,7 +2474,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_spinRandomMin_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2376,12 +2495,12 @@ $PE_guielement_ext_colorpicker = "18 18";
                            position = getWord($PE_guielement_pos_slider,0)+mCeil(getWord($PE_guielement_ext_slider,0)/2)-1 SPC "0";
                            Extent = "2 18";
                            minExtent = "0 0";
-                           bitmap = "core/art/gui/images/separator-h";
+                           bitmap = "tools/gui/images/separator-h";
                            tooltip = "No Spin";
                         };
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2393,7 +2512,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2410,7 +2529,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_spinRandomMax_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2423,7 +2542,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         isContainer = "1"; HorizSizing = "width"; Position = "0 0"; Extent = "194 8";
                         new GuiBitmapCtrl(){
                            position="0 3"; extent ="188 2"; HorizSizing = "width";
-                           bitmap ="core/art/gui/images/separator-v"; 
+                           bitmap ="tools/gui/images/separator-v"; 
                         };
                      };// end spacer ----------------------------------------
                      
@@ -2436,7 +2555,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2448,7 +2567,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2465,7 +2584,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_spinSpeed_textEdit";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2475,6 +2594,151 @@ $PE_guielement_ext_colorpicker = "18 18";
                      };
                   }; // end stack
                }; // end "Spin" rollout
+               new GuiRolloutCtrl() {
+                  class = "BehaviorQuickEditRollout";
+                  superclass = LBQuickEditRollout;
+                  Profile = "GuiRolloutProfile";
+                  HorizSizing = "width";
+                  VertSizing = "bottom";
+                  Position = "0 0";
+                  Extent = "197 0";
+                  Caption = "Animation";
+                  Margin = "4 4 4 0";
+                  DragSizable = false;
+                  container = true;
+                  parentRollout = %this.rollout;
+                  object = %behavior;
+                  
+                  new GuiStackControl() {
+                     StackingType = "Vertical";
+                     HorizStacking = "Left to Right";
+                     VertStacking = "Top to Bottom";
+                     Padding = "0";
+                     canSaveDynamicFields = "0";
+                     Enabled = "1";
+                     isContainer = "1";
+                     Profile = "ToolsGuiDefaultProfile";
+                     HorizSizing = "width";
+                     VertSizing = "bottom";
+                     Position = "1 3";
+                     Extent = "197 16";
+                     MinExtent = "16 16";
+                     canSave = "1";
+                     isDecoy = "0";
+                     Visible = "1";
+                     tooltipprofile = "ToolsGuiToolTipProfile";
+                     hovertime = "1000";
+                     
+                     new GuiCheckBoxCtrl() {
+                        internalName = "PEP_animateTexture";
+                        HorizSizing = "width";
+                        VertSizing = "bottom";
+                        position = "55 14";
+                        Extent = "84 18";
+                        MinExtent = "8 2";
+                        text = "Animate Texture";
+                        command = "PE_ParticleEditor.updateParticle( \"animateTexture\", $ThisControl.getValue());";
+                     };
+                     new GuiControl(){ // Particle framesPerSec
+                        class = "AggregateControl";
+                        isContainer = "1";
+                        HorizSizing = "width";
+                        VertSizing = "bottom";
+                        Position = $PE_guielement_pos_single_container ;
+                        Extent = $PE_guielement_ext_single_container ;
+                        
+                        new GuiTextCtrl() {
+                           Profile = "ToolsGuiTextProfile";
+                           HorizSizing = "width";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_name;
+                           Extent = $PE_guielement_ext_name;
+                           text = "framesPerSec";
+                        };
+                        new GuiSliderCtrl(PEP_framesPerSec) {
+                           internalName = "PEP_framesPerSec_slider";
+                           canSaveDynamicFields = "0";
+                           Enabled = "1";
+                           isContainer = "0";
+                           Profile = "ToolsGuiSliderProfile";
+                           HorizSizing = "left";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_slider;
+                           Extent = $PE_guielement_ext_slider;
+                           MinExtent = "8 2";
+                           canSave = "1";
+                           Visible = "1";
+                           hovertime = "1000";
+                           range = "0 60";
+                           ticks = "0";
+                           value = "0";
+                           Command = "PE_ParticleEditor.updateParticle( \"framesPerSec\", $ThisControl.getValue(), true, true );";
+                           altCommand = "$ThisControl.getParent().updateFromChild($ThisControl); PE_ParticleEditor.updateParticle( \"framesPerSec\", $ThisControl.getValue(), true, false );";
+                        };
+                        new GuiTextEditCtrl() {
+                           internalName = "PEP_framesPerSec_textEdit";
+                           Profile = "ToolsGuiTextEditProfile";
+                           HorizSizing = "left";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_value;
+                           Extent = $PE_guielement_ext_value;
+                           altCommand = "$ThisControl.getParent().updateFromChild($ThisControl); PE_ParticleEditor.updateParticle( \"framesPerSec\", $ThisControl.getText());";
+                        };
+                     }; // end framesPerSec
+                     new GuiControl(){ // Particle animTexFramesList
+                        class = "AggregateControl";
+                        isContainer = "1";
+                        HorizSizing = "width";
+                        VertSizing = "bottom";
+                        Position = $PE_guielement_pos_single_container;
+                        Extent = $PE_guielement_ext_single_container;
+                        
+                        new GuiTextCtrl() {
+                           Profile = "ToolsGuiTextProfile";
+                           HorizSizing = "width";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_name;
+                           Extent = $PE_guielement_ext_name;
+                           text = "animTexFrames";
+                        };
+                        new GuiTextEditCtrl() {
+                           internalName = "PEP_animTexFramesList_textEdit";
+                           Profile = "ToolsGuiTextEditProfile";
+                           HorizSizing = "left";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_textedit;
+                           Extent = $PE_guielement_ext_textedit;
+                           altCommand = "$ThisControl.getParent().updateFromChild($ThisControl); PE_ParticleEditor.updateParticle( \"animTexFrames\", $ThisControl.getText());";
+                        };
+				    }; // end animTexFramesList
+                     new GuiControl(){ // Particle animTileCount
+                        class = "AggregateControl";
+                        isContainer = "1";
+                        HorizSizing = "width";
+                        VertSizing = "bottom";
+                        Position = $PE_guielement_pos_single_container;
+                        Extent = $PE_guielement_ext_single_container;
+						
+                        new GuiTextCtrl() {
+                           Profile = "ToolsGuiTextProfile";
+                           HorizSizing = "width";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_name;
+                           Extent = $PE_guielement_ext_name;
+                           text = "TileCount (X Y)";
+                        };
+                        new GuiTextEditCtrl() {
+                           internalName = "PEP_animTileCount_textEdit";
+                           Profile = "ToolsGuiTextEditProfile";
+                           HorizSizing = "left";
+                           VertSizing = "bottom";
+                           position = $PE_guielement_pos_value;
+                           Extent = $PE_guielement_ext_value;
+                           altCommand = "$ThisControl.getParent().updateFromChild($ThisControl); PE_ParticleEditor.updateParticle( \"animTexTiling\", $ThisControl.getText());";
+                        };
+				    }; // end animTileCount
+                  }; // end stack
+               }; // end "Anim" rollout
                new GuiRolloutCtrl() {
                   class = "BehaviorQuickEditRollout";
                   superclass = LBQuickEditRollout;
@@ -2498,7 +2762,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSaveDynamicFields = "0";
                      Enabled = "1";
                      isContainer = "1";
-                     Profile = "GuiDefaultProfile";
+                     Profile = "ToolsGuiDefaultProfile";
                      HorizSizing = "width";
                      VertSizing = "bottom";
                      Position = "1 3";
@@ -2507,7 +2771,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                      canSave = "1";
                      isDecoy = "0";
                      Visible = "1";
-                     tooltipprofile = "GuiToolTipProfile";
+                     tooltipprofile = "ToolsGuiToolTipProfile";
                      hovertime = "1000";
                      
                      new GuiControl(){ // Particle Point Colors
@@ -2519,7 +2783,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2616,7 +2880,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         isContainer = "1"; HorizSizing = "width"; Position = "0 0"; Extent = "194 8";
                         new GuiBitmapCtrl(){
                            position="0 3"; extent ="188 2"; HorizSizing = "width";
-                           bitmap ="core/art/gui/images/separator-v"; 
+                           bitmap ="tools/gui/images/separator-v"; 
                         };
                      };// end spacer ----------------------------------------
                      
@@ -2629,7 +2893,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2641,7 +2905,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2659,7 +2923,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_pointSize_textEdit0";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2676,7 +2940,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2688,7 +2952,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2706,7 +2970,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_pointSize_textEdit1";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2723,7 +2987,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2735,7 +2999,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2753,7 +3017,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_pointSize_textEdit2";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2770,7 +3034,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2782,7 +3046,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2800,7 +3064,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_pointSize_textEdit3";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2813,7 +3077,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         isContainer = "1"; HorizSizing = "width"; Position = "0 0"; Extent = "194 8";
                         new GuiBitmapCtrl(){
                            position="0 3"; extent ="188 2"; HorizSizing = "width";
-                           bitmap ="core/art/gui/images/separator-v"; 
+                           bitmap ="tools/gui/images/separator-v"; 
                         };
                      };// end spacer ----------------------------------------
                      
@@ -2826,7 +3090,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2838,7 +3102,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2856,7 +3120,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_pointTime_textEdit0";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2873,7 +3137,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2885,7 +3149,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2903,7 +3167,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_pointTime_textEdit1";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2920,7 +3184,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2932,7 +3196,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2950,7 +3214,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_pointTime_textEdit2";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -2967,7 +3231,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         Extent = $PE_guielement_ext_single_container ;
                         
                         new GuiTextCtrl() {
-                           Profile = "GuiTextProfile";
+                           Profile = "ToolsGuiTextProfile";
                            HorizSizing = "width";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_name;
@@ -2979,7 +3243,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                            canSaveDynamicFields = "0";
                            Enabled = "1";
                            isContainer = "0";
-                           Profile = "GuiSliderProfile";
+                           Profile = "ToolsGuiSliderProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_slider;
@@ -2997,7 +3261,7 @@ $PE_guielement_ext_colorpicker = "18 18";
                         };
                         new GuiTextEditCtrl() {
                            internalName = "PEP_pointTime_textEdit3";
-                           Profile = "GuiTextEditProfile";
+                           Profile = "ToolsGuiTextEditProfile";
                            HorizSizing = "left";
                            VertSizing = "bottom";
                            position = $PE_guielement_pos_value;
@@ -3015,7 +3279,7 @@ $PE_guielement_ext_colorpicker = "18 18";
       canSaveDynamicFields = "0";
       Enabled = "1";
       isContainer = "0";
-      Profile = "GuiButtonProfile";
+      Profile = "ToolsGuiButtonProfile";
       HorizSizing = "left";
       VertSizing = "bottom";
       Position = "169 25";
@@ -3024,7 +3288,7 @@ $PE_guielement_ext_colorpicker = "18 18";
       canSave = "1";
       Visible = "1";
       Command = "ParticleEditor.updateEmitterNode();";
-      tooltipprofile = "GuiToolTipProfile";
+      tooltipprofile = "ToolsGuiToolTipProfile";
       ToolTip = "Play Particle Effect from Start";
       hovertime = "1000";
       bitmap = "tools/particleEditor/images/play_btn";
@@ -3038,7 +3302,7 @@ $PE_guielement_ext_colorpicker = "18 18";
       canSaveDynamicFields = "0";
       Enabled = "1";
       isContainer = "0";
-      Profile = "GuiButtonProfile";
+      Profile = "ToolsGuiButtonProfile";
       HorizSizing = "left";
       VertSizing = "bottom";
       Position = "189 26";
@@ -3047,7 +3311,7 @@ $PE_guielement_ext_colorpicker = "18 18";
       canSave = "1";
       Visible = "1";
       Command = "ParticleEditor.resetEmitterNode();";
-      tooltipprofile = "GuiToolTipProfile";
+      tooltipprofile = "ToolsGuiToolTipProfile";
       ToolTip = "Drops Particle Effect in front of the Camera";
       hovertime = "1000";
       bitmap = "tools/classIcons/camera";

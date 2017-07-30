@@ -87,7 +87,7 @@ function DemoPlayer::onEndSequence(%this,%obj,%slot)
 // AIPlayer static functions
 //-----------------------------------------------------------------------------
 
-function AIPlayer::spawn(%name,%spawnPoint)
+function AIPlayer::spawnAtLocation(%name, %spawnPoint)
 {
    // Create the demo player object
    %player = new AiPlayer()
@@ -101,13 +101,13 @@ function AIPlayer::spawn(%name,%spawnPoint)
    return %player;
 }
 
-function AIPlayer::spawnOnPath(%name,%path)
+function AIPlayer::spawnOnPath(%name, %path)
 {
    // Spawn a player and place him on the first node of the path
    if (!isObject(%path))
       return 0;
    %node = %path.getObject(0);
-   %player = AIPlayer::spawn(%name, %node.getTransform());
+   %player = AIPlayer::spawnAtLocation(%name, %node.getTransform());
    return %player;
 }
 
@@ -118,7 +118,6 @@ function AIPlayer::spawnOnPath(%name,%path)
 function AIPlayer::followPath(%this,%path,%node)
 {
    // Start the player following a path
-   %this.stopThread(0);
    if (!isObject(%path))
    {
       %this.path = "";
@@ -141,26 +140,31 @@ function AIPlayer::followPath(%this,%path,%node)
 
 function AIPlayer::moveToNextNode(%this)
 {
-   if (%this.targetNode < 0 || %this.currentNode < %this.targetNode)
-   {
-      if (%this.currentNode < %this.path.getCount() - 1)
-         %this.moveToNode(%this.currentNode + 1);
-      else
-         %this.moveToNode(0);
+   %pathNodeCount=%this.path.getCount();
+   %slowdown=0;
+
+   %targetNode=%this.currentNode + 1;
+
+   if (%this.path.isLooping) {
+      %targetNode %= %pathNodeCount;
+   } else {
+      if (%targetNode >= %pathNodeCount-1) {
+         %targetNode=%pathNodeCount-1;
+
+         if (%currentNode < %targetNode)
+            %slowdown=1;
+      }
    }
-   else
-      if (%this.currentNode == 0)
-         %this.moveToNode(%this.path.getCount() - 1);
-      else
-         %this.moveToNode(%this.currentNode - 1);
+
+   %this.moveToNode(%targetNode, %slowdown);
 }
 
-function AIPlayer::moveToNode(%this,%index)
+function AIPlayer::moveToNode(%this,%index,%slowdown)
 {
    // Move to the given path node index
    %this.currentNode = %index;
    %node = %this.path.getObject(%index);
-   %this.setMoveDestination(%node.getTransform(), %index == %this.targetNode);
+   %this.setMoveDestination(%node.getTransform(),%slowdown);
 }
 
 //-----------------------------------------------------------------------------
@@ -208,7 +212,10 @@ function AIPlayer::singleShot(%this)
    // The shooting delay is used to pulse the trigger
    %this.setImageTrigger(0, true);
    %this.setImageTrigger(0, false);
-   %this.trigger = %this.schedule(%this.shootingDelay, singleShot);
+   %delay = %this.getDataBlock().shootingDelay;
+   if (%delay $= "")
+      %delay = 1000;
+   %this.trigger = %this.schedule(%delay, singleShot);
 }
 
 //-----------------------------------------------------------------------------
@@ -298,28 +305,26 @@ function AIPlayer::getNearestPlayerTarget(%this)
 
 //-----------------------------------------------------------------------------
 
-function AIManager::think(%this)
+function AIPlayer::think(%player)
 {
-   // We could hook into the player's onDestroyed state instead of having to
-   // "think", but thinking allows us to consider other things...
-   if (!isObject(%this.player))
-      %this.player = %this.spawn();
-   %this.schedule(500, think);
+   // Thinking allows us to consider other things...
+   %player.schedule(500, think);
 }
 
-function AIManager::spawn(%this)
+function AIPlayer::spawn(%path)
 {
-   %player = AIPlayer::spawnOnPath("Shootme", "MissionGroup/Paths/Path1");
+   %player = AIPlayer::spawnOnPath("Shootme", %path);
 
    if (isObject(%player))
    {
-      %player.followPath("MissionGroup/Paths/Path1", -1);
+      %player.followPath(%path, -1);
 
       // slow this sucker down, I'm tired of chasing him!
       %player.setMoveSpeed(0.5);
 
       //%player.mountImage(xxxImage, 0);
       //%player.setInventory(xxxAmmo, 1000);
+      //%player.think();
 
       return %player;
    }

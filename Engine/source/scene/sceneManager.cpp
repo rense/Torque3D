@@ -36,10 +36,12 @@
 #include "console/engineAPI.h"
 #include "sim/netConnection.h"
 #include "T3D/gameBase/gameConnection.h"
+#include "math/mathUtils.h"
 
 // For player object bounds workaround.
 #include "T3D/player.h"
 
+#include "postFx/postEffectManager.h"
 
 extern bool gEditingMission;
 
@@ -106,16 +108,17 @@ SceneManager* gServerSceneGraph = NULL;
 //-----------------------------------------------------------------------------
 
 SceneManager::SceneManager( bool isClient )
-   : mLightManager( NULL ),
-     mCurrentRenderState( NULL ),
-     mIsClient( isClient ),
+   : mIsClient( isClient ),
+     mZoneManager( NULL ),
      mUsePostEffectFog( true ),
      mDisplayTargetResolution( 0, 0 ),
-     mDefaultRenderPass( NULL ),
+     mCurrentRenderState( NULL ),
      mVisibleDistance( 500.f ),
+     mVisibleGhostDistance( 0 ),
      mNearClip( 0.1f ),
+     mLightManager( NULL ),
      mAmbientLightColor( ColorF( 0.1f, 0.1f, 0.1f, 1.0f ) ),
-     mZoneManager( NULL )
+     mDefaultRenderPass( NULL )
 {
    VECTOR_SET_ASSOCIATION( mBatchQueryList );
 
@@ -156,9 +159,7 @@ void SceneManager::renderScene( ScenePassType passType, U32 objectMask )
    {
       // Store the camera state so if we lock, this will become the
       // locked state.
-
-      if( passType == SPT_Diffuse )
-         smLockedDiffuseCamera = cameraState;
+      smLockedDiffuseCamera = cameraState;
    }
    
    // Create the render state.
@@ -191,7 +192,7 @@ void SceneManager::renderScene( SceneRenderState* renderState, U32 objectMask, S
    // Get the lights for rendering the scene.
 
    PROFILE_START( SceneGraph_registerLights );
-      LIGHTMGR->registerGlobalLights( &renderState->getFrustum(), false );
+      LIGHTMGR->registerGlobalLights( &renderState->getCullingFrustum(), false );
    PROFILE_END();
 
    // If its a diffuse pass, update the current ambient light level.
@@ -233,7 +234,75 @@ void SceneManager::renderScene( SceneRenderState* renderState, U32 objectMask, S
 
    // Render the scene.
 
-   renderSceneNoLights( renderState, objectMask, baseObject, baseZone );
+   if(GFX->getCurrentRenderStyle() == GFXDevice::RS_StereoSideBySide)
+   {
+      // Store previous values
+      RectI originalVP = GFX->getViewport();
+      MatrixF originalWorld = GFX->getWorldMatrix();
+      Frustum originalFrustum = GFX->getFrustum();
+
+      // Save PFX & SceneManager projections
+      MatrixF origNonClipProjection = renderState->getSceneManager()->getNonClipProjection();
+      PFXFrameState origPFXState = PFXMGR->getFrameState();
+
+      const FovPort *currentFovPort = GFX->getStereoFovPort();
+      const MatrixF *worldEyeTransforms = GFX->getInverseStereoEyeTransforms();
+
+      // Render left half of display
+      GFX->activateStereoTarget(0);
+      GFX->beginField();
+
+      GFX->setWorldMatrix(worldEyeTransforms[0]);
+
+      Frustum gfxFrustum = originalFrustum;
+      MathUtils::makeFovPortFrustum(&gfxFrustum, gfxFrustum.isOrtho(), gfxFrustum.getNearDist(), gfxFrustum.getFarDist(), currentFovPort[0]);
+      GFX->setFrustum(gfxFrustum);
+
+      SceneCameraState cameraStateLeft = SceneCameraState::fromGFX();
+      SceneRenderState renderStateLeft( this, renderState->getScenePassType(), cameraStateLeft );
+      renderStateLeft.getSceneManager()->setNonClipProjection(GFX->getProjectionMatrix());
+      renderStateLeft.setSceneRenderStyle(SRS_SideBySide);
+      PFXMGR->setFrameMatrices(GFX->getWorldMatrix(), GFX->getProjectionMatrix());
+
+      renderSceneNoLights( &renderStateLeft, objectMask, baseObject, baseZone ); // left
+
+      // Indicate that we've just finished a field
+      //GFX->clear(GFXClearTarget | GFXClearZBuffer | GFXClearStencil, ColorI(255,0,0), 1.0f, 0);
+      GFX->endField();
+      
+      // Render right half of display
+      GFX->activateStereoTarget(1);
+      GFX->beginField();
+      GFX->setWorldMatrix(worldEyeTransforms[1]);
+
+      gfxFrustum = originalFrustum;
+      MathUtils::makeFovPortFrustum(&gfxFrustum, gfxFrustum.isOrtho(), gfxFrustum.getNearDist(), gfxFrustum.getFarDist(), currentFovPort[1]);
+      GFX->setFrustum(gfxFrustum);
+
+      SceneCameraState cameraStateRight = SceneCameraState::fromGFX();
+      SceneRenderState renderStateRight( this, renderState->getScenePassType(), cameraStateRight );
+      renderStateRight.getSceneManager()->setNonClipProjection(GFX->getProjectionMatrix());
+      renderStateRight.setSceneRenderStyle(SRS_SideBySide);
+      PFXMGR->setFrameMatrices(GFX->getWorldMatrix(), GFX->getProjectionMatrix());
+
+      renderSceneNoLights( &renderStateRight, objectMask, baseObject, baseZone ); // right
+
+      // Indicate that we've just finished a field
+      //GFX->clear(GFXClearTarget | GFXClearZBuffer | GFXClearStencil, ColorI(0,255,0), 1.0f, 0);
+      GFX->endField();
+
+      // Restore previous values
+      renderState->getSceneManager()->setNonClipProjection(origNonClipProjection);
+      PFXMGR->setFrameState(origPFXState);
+
+      GFX->setWorldMatrix(originalWorld);
+      GFX->setFrustum(originalFrustum);
+      GFX->setViewport(originalVP);
+   }
+   else
+   {
+      renderSceneNoLights( renderState, objectMask, baseObject, baseZone );
+   }
 
    // Trigger the post-render signal.
 
@@ -329,7 +398,7 @@ void SceneManager::_renderScene( SceneRenderState* state, U32 objectMask, SceneZ
    // the opportunity to render editor visualizations even if
    // they are otherwise not in view.
 
-   if( !state->getFrustum().getBounds().isOverlapped( state->getRenderArea() ) )
+   if( !state->getCullingFrustum().getBounds().isOverlapped( state->getRenderArea() ) )
    {
       // This handles fringe cases like flying backwards into a zone where you
       // end up pretty much standing on a zone border and looking directly into
@@ -340,7 +409,7 @@ void SceneManager::_renderScene( SceneRenderState* state, U32 objectMask, SceneZ
       return;
    }
 
-   Box3F queryBox = state->getFrustum().getBounds();
+   Box3F queryBox = state->getCullingFrustum().getBounds();
    if( !gEditingMission )
    {
       queryBox.minExtents.setMax( state->getRenderArea().minExtents );
@@ -390,6 +459,13 @@ void SceneManager::_renderScene( SceneRenderState* state, U32 objectMask, SceneZ
    }
 
    PROFILE_END();
+
+   //store our rendered objects into a list we can easily look up against later if required
+   mRenderedObjectsList.clear();
+   for (U32 i = 0; i < numRenderObjects; ++i)
+   {
+      mRenderedObjectsList.push_back(mBatchQueryList[i]);
+   }
 
    // Render the remaining objects.
 
@@ -532,6 +608,7 @@ bool SceneManager::addObjectToScene( SceneObject* object )
 
 void SceneManager::removeObjectFromScene( SceneObject* obj )
 {
+   AssertFatal( obj, "SceneManager::removeObjectFromScene - Object is not declared" );
    AssertFatal( obj->getSceneManager() == this, "SceneManager::removeObjectFromScene - Object not part of SceneManager" );
 
    // Notify the object.
@@ -540,7 +617,8 @@ void SceneManager::removeObjectFromScene( SceneObject* obj )
 
    // Remove the object from the container.
 
-   getContainer()->removeObject( obj );
+   if( getContainer() )
+      getContainer()->removeObject( obj );
 
    // Remove the object from the zoning system.
 

@@ -26,6 +26,7 @@
 #include "basicClouds.h"
 
 #include "gfx/gfxTransformSaver.h"
+#include "gfx/gfxTextureManager.h"
 #include "core/stream/fileStream.h"
 #include "core/stream/bitStream.h"
 #include "scene/sceneRenderState.h"
@@ -61,6 +62,12 @@ BasicClouds::BasicClouds()
 {
    mTypeMask |= EnvironmentObjectType | StaticObjectType;
    mNetFlags.set(Ghostable | ScopeAlways);
+
+   mTimeSC = 0;
+   mModelViewProjSC = 0;
+   mTexScaleSC = 0;
+   mTexDirectionSC = 0;
+   mTexOffsetSC = 0;
 
    mLayerEnabled[0] = true;
    mLayerEnabled[1] = true;
@@ -128,12 +135,13 @@ bool BasicClouds::onAdd()
       mTexScaleSC = mShader->getShaderConstHandle( "$texScale" );
       mTexDirectionSC = mShader->getShaderConstHandle( "$texDirection" );
       mTexOffsetSC = mShader->getShaderConstHandle( "$texOffset" );
+      mDiffuseMapSC = mShader->getShaderConstHandle( "$diffuseMap" );
 
       // Create StateBlocks
       GFXStateBlockDesc desc;
       desc.setCullMode( GFXCullNone );
       desc.setBlend( true );
-      desc.setZReadWrite( false, false );
+      desc.setZReadWrite( true, false );
       desc.samplersDefined = true;
       desc.samplers[0].addressModeU = GFXAddressWrap;
       desc.samplers[0].addressModeV = GFXAddressWrap;
@@ -311,7 +319,7 @@ void BasicClouds::renderObject( ObjectRenderInst *ri, SceneRenderState *state, B
       mShaderConsts->setSafe( mTexDirectionSC, mTexDirection[i] * mTexSpeed[i] );
       mShaderConsts->setSafe( mTexOffsetSC, mTexOffset[i] );         
 
-      GFX->setTexture( 0, mTexture[i] );                            
+      GFX->setTexture( mDiffuseMapSC->getSamplerRegister(), mTexture[i] );                            
       GFX->setVertexBuffer( mVB[i] );            
 
       GFX->drawIndexedPrimitive( GFXTriangleList, 0, 0, smVertCount, 0, smTriangleCount );
@@ -336,7 +344,7 @@ void BasicClouds::_initTexture()
       mTexture[i].set( mTexName[i], &GFXDefaultStaticDiffuseProfile, "BasicClouds" );
 
       if ( mTexture[i].isNull() )
-         mTexture[i].set( "core/art/warnmat", &GFXDefaultStaticDiffuseProfile, "BasicClouds" );
+         mTexture[i].set( GFXTextureManager::getWarningTexturePath(), &GFXDefaultStaticDiffuseProfile, "BasicClouds" );
    }
 }
 

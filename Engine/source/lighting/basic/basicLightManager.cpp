@@ -44,12 +44,10 @@
 #include "shaderGen/HLSL/shaderFeatureHLSL.h"
 #include "shaderGen/HLSL/bumpHLSL.h"
 #include "shaderGen/HLSL/pixSpecularHLSL.h"
-#include "lighting/basic/blInteriorSystem.h"
 #include "lighting/basic/blTerrainSystem.h"
 #include "lighting/common/projectedShadow.h"
 
-
-#ifdef TORQUE_OS_MAC
+#if defined( TORQUE_OPENGL )
 #include "shaderGen/GLSL/shaderFeatureGLSL.h"
 #include "shaderGen/GLSL/bumpGLSL.h"
 #include "shaderGen/GLSL/pixSpecularGLSL.h"
@@ -95,10 +93,8 @@ BasicLightManager::BasicLightManager()
 {
    mTimer = PlatformTimer::create();
    
-   mInteriorSystem = new blInteriorSystem;
    mTerrainSystem = new blTerrainSystem;
    
-   getSceneLightingInterface()->registerSystem( mInteriorSystem );
    getSceneLightingInterface()->registerSystem( mTerrainSystem );
 
    Con::addVariable( "$BasicLightManagerStats::activePlugins", 
@@ -152,7 +148,6 @@ BasicLightManager::~BasicLightManager()
       SAFE_DELETE( mTimer );
 
    SAFE_DELETE( mTerrainSystem );
-   SAFE_DELETE( mInteriorSystem );
 }
 
 bool BasicLightManager::isCompatible() const
@@ -167,7 +162,7 @@ void BasicLightManager::activate( SceneManager *sceneManager )
 
    if( GFX->getAdapterType() == OpenGL )
    {
-      #ifdef TORQUE_OS_MAC
+      #if defined( TORQUE_OPENGL ) 
          FEATUREMGR->registerFeature( MFT_LightMap, new LightmapFeatGLSL );
          FEATUREMGR->registerFeature( MFT_ToneMap, new TonemapFeatGLSL );
          FEATUREMGR->registerFeature( MFT_NormalMap, new BumpFeatGLSL );
@@ -177,7 +172,7 @@ void BasicLightManager::activate( SceneManager *sceneManager )
    }
    else
    {
-      #ifndef TORQUE_OS_MAC
+      #if defined( TORQUE_OS_WIN )
          FEATUREMGR->registerFeature( MFT_LightMap, new LightmapFeatHLSL );
          FEATUREMGR->registerFeature( MFT_ToneMap, new TonemapFeatHLSL );
          FEATUREMGR->registerFeature( MFT_NormalMap, new BumpFeatHLSL );

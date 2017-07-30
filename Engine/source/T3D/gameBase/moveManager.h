@@ -36,7 +36,12 @@ class BitStream;
 
 struct Move
 {
-   enum { ChecksumBits = 16, ChecksumMask = ((1<<ChecksumBits)-1), ChecksumMismatch = U32(-1) };
+   enum : U32 
+   { 
+      ChecksumBits = 16, 
+      ChecksumMask = ((1<<ChecksumBits)-1), 
+      ChecksumMismatch = U32(-1) 
+   };
 
    // packed storage rep, set in clamp
    S32 px, py, pz;
@@ -51,10 +56,16 @@ struct Move
    bool freeLook;
    bool trigger[MaxTriggerKeys];
 
-   void pack(BitStream *stream, const Move * move = NULL);
-   void unpack(BitStream *stream, const Move * move = NULL);
-   void clamp();
-   void unclamp();
+   Move();
+
+   virtual void pack(BitStream *stream, const Move * move = NULL);
+   virtual void unpack(BitStream *stream, const Move * move = NULL);
+   virtual void clamp();
+   virtual void unclamp();
+
+protected:
+   bool packMove(BitStream *stream, const Move* basemove, bool alwaysWriteAll);
+   bool unpackMove(BitStream *stream, const Move* basemove, bool alwaysReadAll);
 };
 
 extern const Move NullMove;

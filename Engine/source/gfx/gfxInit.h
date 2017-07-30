@@ -65,15 +65,25 @@ public:
    /// Get the number of available adapters.
    static S32 getAdapterCount();
    
+   /// Compares the adapter's output display device with the given output display device
+   static bool compareAdapterOutputDevice(const GFXAdapter* adapter, const char* outputDevice);
+
    /// Chooses a suitable GFXAdapter, based on type, preferences, and fallbacks.
    /// If the requested type is omitted, we use the prefs value.
    /// If the requested type isn't found, we use fallbacks: OpenGL, NullDevice
    /// This method never returns NULL.
-   static GFXAdapter *chooseAdapter( GFXAdapterType type);
+   static GFXAdapter *chooseAdapter( GFXAdapterType type, const char* outputDevice);
 
-   /// Gets the first adapter of the requested type from the list of enumerated
-   /// adapters. Should only call this after a call to enumerateAdapters.
-   static GFXAdapter *getAdapterOfType( GFXAdapterType type );
+   /// Override which chooses an adapter based on an index instead
+   static GFXAdapter *chooseAdapter( GFXAdapterType type, S32 outputDeviceIndex );
+
+   /// Gets the first adapter of the requested type (and on the requested output device)
+   /// from the list of enumerated adapters. Should only call this after a call to
+   /// enumerateAdapters.
+   static GFXAdapter *getAdapterOfType( GFXAdapterType type, const char* outputDevice );
+
+   /// Override which gets an adapter based on an index instead
+   static GFXAdapter *getAdapterOfType( GFXAdapterType type, S32 outputDeviceIndex );
       
    /// Converts a GFXAdapterType to a string name. Useful for writing out prefs
    static const char *getAdapterNameFromType( GFXAdapterType type );

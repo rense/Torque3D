@@ -30,14 +30,38 @@
 #include "math/mMath.h"
 #endif
 
+
+#ifndef _MATTEXTURETARGET_H_
+#include "materials/matTextureTarget.h"
+#endif
+
+#ifndef _GUIOFFSCREENCANVAS_H_
+#include "gui/core/guiOffscreenCanvas.h"
+#endif
+
+class IDisplayDevice;
+class GuiOffscreenCanvas;
+
 struct CameraQuery
 {
    SimObject*  object;
    F32         nearPlane;
    F32         farPlane;
    F32         fov;
+   FovPort     fovPort[2]; // fov for each eye
+   Point3F     eyeOffset[2];
+   MatrixF     eyeTransforms[2];
    bool        ortho;
+   bool        hasFovPort;
+   bool        hasStereoTargets;
    MatrixF     cameraMatrix;
+   MatrixF     headMatrix; // center matrix (for HMDs)
+   S32         currentEye;
+   RectI       stereoViewports[2]; // destination viewports
+   GFXTextureTarget* stereoTargets[2];
+   GuiCanvas* drawCanvas; // Canvas we are drawing to. Needed for VR
+
+   IDisplayDevice* displayDevice;
 };
 
 /// Abstract base class for 3D viewport GUIs.
@@ -45,11 +69,18 @@ class GuiTSCtrl : public GuiContainer
 {
    typedef GuiContainer Parent;
 
-   static U32     smFrameCount;
-   F32            mCameraZRot;
-   F32            mForceFOV;
+public:
+   enum RenderStyles {
+      RenderStyleStandard           = 0,
+      RenderStyleStereoSideBySide   = (1<<0),
+      RenderStyleStereoSeparate     = (1<<1),
+   };
 
 protected:
+   static U32     smFrameCount;
+   static bool    smUseLatestDisplayTransform;
+   F32            mCameraZRot;
+   F32            mForceFOV;
 
    /// A list of GuiTSCtrl which are awake and 
    /// most likely rendering.
@@ -59,8 +90,11 @@ protected:
    /// update timeslice for this viewport to get.
    F32 mReflectPriority;
 
-   F32            mOrthoWidth;
-   F32            mOrthoHeight;
+   /// The current render type
+   U32 mRenderStyle;
+
+   F32         mOrthoWidth;
+   F32         mOrthoHeight;
 
    MatrixF     mSaveModelview;
    MatrixF     mSaveProjection;
@@ -73,13 +107,23 @@ protected:
 
    /// The last camera query set in onRender.
    /// @see getLastCameraQuery
-   CameraQuery mLastCameraQuery;	
+   CameraQuery mLastCameraQuery;
+
+   NamedTexTargetRef mStereoGuiTarget;
+   GFXVertexBufferHandle<GFXVertexPCT> mStereoOverlayVB;
+   GFXStateBlockRef mStereoGuiSB;
+
+   GFXVertexBufferHandle<GFXVertexPCT> mStereoPreviewVB;
+   GFXStateBlockRef mStereoPreviewSB;
+
+   SimObjectPtr<GuiOffscreenCanvas> mStereoCanvas;
    
 public:
    
    GuiTSCtrl();
 
    void onPreRender();
+   void _internalRender(RectI guiViewport, RectI renderViewport, Frustum &frustum);
    void onRender(Point2I offset, const RectI &updateRect);
    virtual bool processCameraQuery(CameraQuery *query);
 
@@ -145,9 +189,18 @@ public:
 
    static const U32& getFrameCount() { return smFrameCount; }
 
+   bool shouldRenderChildControls() { return mRenderStyle == RenderStyleStandard; }
+
+   void setStereoGui(GuiOffscreenCanvas *canvas);
+   void renderDisplayPreview(const RectI &updateRect, GFXTexHandle &previewTexture);
+
    DECLARE_CONOBJECT(GuiTSCtrl);
    DECLARE_CATEGORY( "Gui 3D" );
    DECLARE_DESCRIPTION( "Abstract base class for controls that render a 3D viewport." );
 };
+
+typedef GuiTSCtrl::RenderStyles GuiTSRenderStyles;
+
+DefineEnumType( GuiTSRenderStyles );
 
 #endif // _GUITSCONTROL_H_

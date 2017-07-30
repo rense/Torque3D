@@ -65,12 +65,17 @@ protected:
 
 public:  
 
-   RenderInstType( const RenderInstType &type = Invalid ) 
+   RenderInstType()
+      :  mName( Invalid.mName )
+   {
+   }
+
+   RenderInstType( const RenderInstType &type )
       :  mName( type.mName )
    {
    }
 
-   RenderInstType( const String &name ) 
+   RenderInstType( const String &name )
       :  mName( name )
    {
    }
@@ -96,7 +101,6 @@ public:
 
    // Default bin types.  Not necessarily the only bin types in the system.
    // RIT = "R"ender "I"nstance "T"ype
-   static const RenderInstType RIT_Interior;
    static const RenderInstType RIT_Mesh;
    static const RenderInstType RIT_Shadow;
    static const RenderInstType RIT_Sky;
@@ -104,8 +108,10 @@ public:
    static const RenderInstType RIT_Object;   // objects that do their own rendering
    static const RenderInstType RIT_ObjectTranslucent;// self rendering; but sorted with static const RenderInstType RIT_Translucent
    static const RenderInstType RIT_Decal;
+   static const RenderInstType RIT_DecalRoad;
    static const RenderInstType RIT_Water;
    static const RenderInstType RIT_Foliage;
+   static const RenderInstType RIT_VolumetricFog;
    static const RenderInstType RIT_Translucent;
    static const RenderInstType RIT_Begin;
    static const RenderInstType RIT_Custom;
@@ -362,7 +368,19 @@ struct MeshRenderInst : public RenderInst
    GFXTextureObject *backBuffTex;
    GFXTextureObject *reflectTex;
    GFXTextureObject *miscTex;
+   GFXTextureObject *accuTex;
    GFXCubemap   *cubemap;
+
+   /// @name Hardware Skinning
+   /// {
+   MatrixF *mNodeTransforms;
+   U32 mNodeTransformCount;
+   /// }
+
+#ifdef TORQUE_ENABLE_GFXDEBUGEVENTS
+   const char *meshName;
+   const char *objectName;
+#endif
 
    void clear();
 };
@@ -387,6 +405,8 @@ struct ParticleRenderInst : public RenderInst
 
    /// The total particle count to render.
    S32 count;
+
+   bool glow;
 
    /// The combined model, camera, and projection transform.
    const MatrixF *modelViewProj;       

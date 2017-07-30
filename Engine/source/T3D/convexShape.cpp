@@ -227,12 +227,12 @@ bool ConvexShape::protectedSetSurface( void *object, const char *index, const ch
 
 
 ConvexShape::ConvexShape()
- : mMaterialInst( NULL ),   
-   mNormalLength( 0.3f ),
+ : mMaterialName( "Grid512_OrangeLines_Mat" ),
+   mMaterialInst( NULL ),
    mVertCount( 0 ),
    mPrimCount( 0 ),
-   mMaterialName( "Grid512_OrangeLines_Mat" ),
-   mPhysicsRep( NULL )
+   mPhysicsRep( NULL ),
+   mNormalLength( 0.3f )
 {   
    mNetFlags.set( Ghostable | ScopeAlways );
    
@@ -367,7 +367,14 @@ void ConvexShape::writeFields( Stream &stream, U32 tabStop )
 
    stream.write(2, "\r\n");   
 
-   for ( U32 i = 0; i < mSurfaces.size(); i++ )
+   S32 count = mSurfaces.size();
+   if ( count > smMaxSurfaces )
+   {
+       Con::errorf( "ConvexShape has too many surfaces to save! Truncated value %d to maximum value of %d", count, smMaxSurfaces );
+       count = smMaxSurfaces;
+   }
+
+   for ( U32 i = 0; i < count; i++ )
    {      
       const MatrixF &mat = mSurfaces[i];
 
@@ -423,12 +430,18 @@ U32 ConvexShape::packUpdate( NetConnection *conn, U32 mask, BitStream *stream )
    if ( stream->writeFlag( mask & UpdateMask ) )
    {
       stream->write( mMaterialName );
-
-      const U32 surfCount = mSurfaces.size();
+      
+      U32 surfCount = mSurfaces.size();
       stream->writeInt( surfCount, 32 );
 
-      for ( S32 i = 0; i < surfCount; i++ )      
-         mathWrite( *stream, mSurfaces[i] );               
+      for ( S32 i = 0; i < surfCount; i++ )    
+      {
+         QuatF quat( mSurfaces[i] );
+		 Point3F pos( mSurfaces[i].getPosition() );
+
+         mathWrite( *stream, quat );
+         mathWrite( *stream, pos );                    
+      }
    }
 
    return retMask;
@@ -462,7 +475,14 @@ void ConvexShape::unpackUpdate( NetConnection *conn, BitStream *stream )
          mSurfaces.increment();
          MatrixF &mat = mSurfaces.last();
 
-         mathRead( *stream, &mat );
+         QuatF quat;
+         Point3F pos;
+
+         mathRead( *stream, &quat );
+         mathRead( *stream, &pos ); 
+
+         quat.setMatrix( &mat );
+         mat.setPosition( pos );
       }
 
       if ( isProperlyAdded() )
@@ -482,7 +502,7 @@ void ConvexShape::prepRenderImage( SceneRenderState *state )
    }
    */
 
-   if ( mVertexBuffer.isNull() )
+   if ( mVertexBuffer.isNull() || !state)
       return;
 
    // If we don't have a material instance after the override then 
@@ -553,7 +573,7 @@ void ConvexShape::prepRenderImage( SceneRenderState *state )
 
    // We sort by the material then vertex buffer.
    ri->defaultKey = matInst->getStateHint();
-   ri->defaultKey2 = (U32)ri->vertBuff; // Not 64bit safe!
+   ri->defaultKey2 = (uintptr_t)ri->vertBuff; // Not 64bit safe!
 
    // Submit our RenderInst to the RenderPassManager
    state->getRenderPass()->addInst( ri );
@@ -632,6 +652,29 @@ bool ConvexShape::buildPolyList( PolyListContext context, AbstractPolyList *plis
    // Add Surfaces...
 
    const Vector< ConvexShape::Face > faceList = mGeometry.faces;
+
+   if(context == PLC_Navigation)
+   {
+      for(S32 i = 0; i < faceList.size(); i++)
+      {
+         const ConvexShape::Face &face = faceList[i];
+
+         S32 s = face.triangles.size();
+         for(S32 j = 0; j < s; j++)
+         {
+            plist->begin(0, s*i + j);
+
+            plist->plane(PlaneF(face.centroid, face.normal));
+
+            plist->vertex(base + face.points[face.triangles[j].p0]);
+            plist->vertex(base + face.points[face.triangles[j].p1]);
+            plist->vertex(base + face.points[face.triangles[j].p2]);
+
+            plist->end();
+         }
+      }
+      return true;
+   }
 
    for ( S32 i = 0; i < faceList.size(); i++ )
    {
@@ -904,68 +947,6 @@ void ConvexShape::exportToCollada()
 		Con::errorf( "ConvexShape::exportToCollada() - has no surfaces to export!" );
 		return;
 	}
-/*		
-		// Get an optimized version of our mesh
-		OptimizedPolyList polyList;
-
-		if (bakeTransform)
-		{
-			MatrixF mat = getTransform();
-			Point3F scale = getScale();
-
-			pInterior->buildExportPolyList(interiorMesh, &mat, &scale);
-		}
-		else
-			pInterior->buildExportPolyList(interiorMesh);
-
-		// Get our export path
-		Torque::Path colladaFile = mInteriorRes.getPath();
-
-		// Make sure to set our Collada extension
-		colladaFile.setExtension("dae");
-
-		// Use the InteriorInstance name if possible
-		String meshName = getName();
-
-		// Otherwise use the DIF's file name
-		if (meshName.isEmpty())
-			meshName = colladaFile.getFileName();
-
-		// If we are baking the transform then append
-		// a CRC version of the transform to the mesh/file name
-		if (bakeTransform)
-		{
-			F32 trans[19];
-
-			const MatrixF& mat = getTransform();
-			const Point3F& scale = getScale();
-
-			// Copy in the transform
-			for (U32 i = 0; i < 4; i++)
-			{
-				for (U32 j = 0; j < 4; j++)
-				{
-					trans[i * 4 + j] = mat(i, j);
-				}
-			}
-
-			// Copy in the scale
-			trans[16] = scale.x;
-			trans[17] = scale.y;
-			trans[18] = scale.z;
-
-			U32 crc = CRC::calculateCRC(trans, sizeof(F32) * 19);
-
-			meshName += String::ToString("_%x", crc);
-		}
-
-		// Set the file name as the meshName
-		colladaFile.setFileName(meshName);
-
-		// Use a ColladaUtils function to do the actual export to a Collada file
-		ColladaUtils::exportToCollada(colladaFile, interiorMesh, meshName);
-	}
-	*/
 }
 
 void ConvexShape::resizePlanes( const Point3F &size )
@@ -1120,8 +1101,6 @@ void ConvexShape::_updateGeometry( bool updateCollision )
 		const Vector< U32 > &facePntMap = face.points;
 		const Vector< ConvexShape::Triangle > &triangles = face.triangles;
 		const ColorI &faceColor = sgConvexFaceColors[ i % sgConvexFaceColorCount ];
-
-		const Point3F binormal = mCross( face.normal, face.tangent );
 
 		for ( S32 j = 0; j < triangles.size(); j++ )
 		{

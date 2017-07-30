@@ -66,7 +66,7 @@ void GFXPCD3D9Device::createDirect3D9(LPDIRECT3D9 &d3d9, LPDIRECT3D9EX &d3d9ex)
       
       if (pfnCreate9Ex)
       {
-         if (!FAILED(pfnCreate9Ex(D3D_SDK_VERSION, &d3d9ex)) && d3d9ex)
+		  if (d3d9ex && !FAILED(pfnCreate9Ex(D3D_SDK_VERSION, &d3d9ex)))
             d3d9ex->QueryInterface(__uuidof(IDirect3D9), reinterpret_cast<void **>(&d3d9));
       }
 
@@ -120,7 +120,7 @@ GFXFormat GFXPCD3D9Device::selectSupportedFormat(GFXTextureProfile *profile,
 		usage |= D3DUSAGE_QUERY_FILTER;
 
 	D3DDISPLAYMODE mode;
-	D3D9Assert(mD3D->GetAdapterDisplayMode(D3DADAPTER_DEFAULT, &mode), "Unable to get adapter mode.");
+	D3D9Assert(mD3D->GetAdapterDisplayMode(mAdapterIndex, &mode), "Unable to get adapter mode.");
 
 	D3DRESOURCETYPE type;
 	if(texture)
@@ -130,7 +130,7 @@ GFXFormat GFXPCD3D9Device::selectSupportedFormat(GFXTextureProfile *profile,
 
 	for(U32 i=0; i<formats.size(); i++)
 	{
-		if(mD3D->CheckDeviceFormat(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, mode.Format,
+		if(mD3D->CheckDeviceFormat(mAdapterIndex, D3DDEVTYPE_HAL, mode.Format,
 			usage, type, GFXD3D9TextureFormat[formats[i]]) == D3D_OK)
 			return formats[i];
 	}
@@ -259,8 +259,11 @@ void GFXPCD3D9Device::enumerateAdapters( Vector<GFXAdapter*> &adapterList )
       D3DADAPTER_IDENTIFIER9 temp;
       d3d9->GetAdapterIdentifier( adapterIndex, NULL, &temp ); // The NULL is the flags which deal with WHQL
 
-      dStrcpy( toAdd->mName, temp.Description );
+      dStrncpy(toAdd->mName, temp.Description, GFXAdapter::MaxAdapterNameLen);
       dStrncat(toAdd->mName, " (D3D9)", GFXAdapter::MaxAdapterNameLen);
+
+      // And the output display device name
+      dStrncpy(toAdd->mOutputName, temp.DeviceName, GFXAdapter::MaxAdapterNameLen);
 
       // Video mode enumeration.
       Vector<D3DFORMAT> formats( __FILE__, __LINE__ );
@@ -303,10 +306,10 @@ void GFXPCD3D9Device::enumerateVideoModes()
 
    for( S32 i = 0; i < formats.size(); i++ ) 
    {
-      for( U32 j = 0; j < mD3D->GetAdapterModeCount( D3DADAPTER_DEFAULT, formats[i] ); j++ ) 
+      for( U32 j = 0; j < mD3D->GetAdapterModeCount( mAdapterIndex, formats[i] ); j++ ) 
       {
          D3DDISPLAYMODE mode;
-         mD3D->EnumAdapterModes( D3DADAPTER_DEFAULT, formats[i], j, &mode );
+         mD3D->EnumAdapterModes( mAdapterIndex, formats[i], j, &mode );
 
          GFXVideoMode toAdd;
 
@@ -329,10 +332,8 @@ void GFXPCD3D9Device::init( const GFXVideoMode &mode, PlatformWindow *window /* 
 
    initD3DXFnTable();
 
-   Win32Window *win = dynamic_cast<Win32Window*>( window );
-   AssertISV( win, "GFXD3D9Device::init - got a non Win32Window window passed in! Did DX go crossplatform?" );
-
-   HWND winHwnd = win->getHWND();
+   HWND winHwnd = (HWND)window->getSystemWindow( PlatformWindow::WindowSystem_Windows );
+   AssertISV(winHwnd, "GFXPCD3D9WindowTarget::initPresentationParams() - no HWND");
 
    // Create D3D Presentation params
    D3DPRESENT_PARAMETERS d3dpp = setupPresentParams( mode, winHwnd );
@@ -392,7 +393,7 @@ void GFXPCD3D9Device::init( const GFXVideoMode &mode, PlatformWindow *window /* 
       deviceFlags |= D3DCREATE_PUREDEVICE;
 #endif
 
-      hres = createDevice( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, winHwnd, deviceFlags, &d3dpp);
+      hres = createDevice( mAdapterIndex, D3DDEVTYPE_HAL, winHwnd, deviceFlags, &d3dpp);
 
       if (FAILED(hres) && hres != D3DERR_OUTOFVIDEOMEMORY)
       {
@@ -403,7 +404,7 @@ void GFXPCD3D9Device::init( const GFXVideoMode &mode, PlatformWindow *window /* 
          // try mixed mode
          deviceFlags &= (~D3DCREATE_HARDWARE_VERTEXPROCESSING);
          deviceFlags |= D3DCREATE_MIXED_VERTEXPROCESSING;
-         hres = createDevice( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, 
+         hres = createDevice( mAdapterIndex, D3DDEVTYPE_HAL, 
             winHwnd, deviceFlags, 
             &d3dpp);
 
@@ -413,7 +414,7 @@ void GFXPCD3D9Device::init( const GFXVideoMode &mode, PlatformWindow *window /* 
             Con::errorf("   Failed to create mixed mode device, trying software device");
             deviceFlags &= (~D3DCREATE_MIXED_VERTEXPROCESSING);
             deviceFlags |= D3DCREATE_SOFTWARE_VERTEXPROCESSING;
-            hres = createDevice( D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, 
+            hres = createDevice( mAdapterIndex, D3DDEVTYPE_HAL, 
                winHwnd, deviceFlags,
                &d3dpp);
 
@@ -446,7 +447,7 @@ void GFXPCD3D9Device::init( const GFXVideoMode &mode, PlatformWindow *window /* 
    Con::printf("   Cur. D3DDevice ref count=%d", mD3DDevice->AddRef() - 1);
    mD3DDevice->Release();
    
-   mTextureManager = new GFXD3D9TextureManager( mD3DDevice );
+   mTextureManager = new GFXD3D9TextureManager( mD3DDevice, mAdapterIndex );
 
    // Now reacquire all the resources we trashed earlier
    reacquireDefaultPoolResources();
@@ -510,10 +511,10 @@ void GFXPCD3D9Device::init( const GFXVideoMode &mode, PlatformWindow *window /* 
 
    Con::printf( "   Using Direct3D9Ex: %s", isD3D9Ex() ? "Yes" : "No" );
    
-   mCardProfiler = new GFXD3D9CardProfiler();
+   mCardProfiler = new GFXD3D9CardProfiler(mAdapterIndex);
    mCardProfiler->init();
 
-   gScreenShot = new ScreenShotD3D;
+   gScreenShot = new ScreenShotD3D9;
 
    // Set the video capture frame grabber.
    mVideoFrameGrabber = new VideoFrameGrabberD3D9();
@@ -956,7 +957,7 @@ void GFXPCD3D9Device::_validateMultisampleParams(D3DFORMAT format, D3DMULTISAMPL
    if (aatype != D3DMULTISAMPLE_NONE)
    {
       DWORD MaxSampleQualities;      
-      mD3D->CheckDeviceMultiSampleType(D3DADAPTER_DEFAULT, D3DDEVTYPE_HAL, format, FALSE, D3DMULTISAMPLE_NONMASKABLE, &MaxSampleQualities);
+      mD3D->CheckDeviceMultiSampleType(mAdapterIndex, D3DDEVTYPE_HAL, format, FALSE, D3DMULTISAMPLE_NONMASKABLE, &MaxSampleQualities);
       aatype = D3DMULTISAMPLE_NONMASKABLE;
       aalevel = getMin((U32)aalevel, (U32)MaxSampleQualities-1);
    }
@@ -1018,10 +1019,6 @@ bool GFXPCD3D9Device::beginSceneInternal()
 GFXWindowTarget * GFXPCD3D9Device::allocWindowTarget( PlatformWindow *window )
 {
    AssertFatal(window,"GFXD3D9Device::allocWindowTarget - no window provided!");
-#ifndef TORQUE_OS_XENON
-   AssertFatal(dynamic_cast<Win32Window*>(window), 
-      "GFXD3D9Device::allocWindowTarget - only works with Win32Windows!");
-#endif
 
    // Set up a new window target...
    GFXPCD3D9WindowTarget *gdwt = new GFXPCD3D9WindowTarget();

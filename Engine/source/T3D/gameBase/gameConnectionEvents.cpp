@@ -32,6 +32,7 @@
 #include "app/game.h"
 #include "T3D/gameBase/gameConnection.h"
 #include "T3D/gameBase/gameConnectionEvents.h"
+#include "console/engineAPI.h"
 
 #define DebugChecksum 0xF00DBAAD
 
@@ -234,7 +235,7 @@ void SimDataBlockEvent::process(NetConnection *cptr)
    if(mProcess)
    {
       //call the console function to set the number of blocks to be sent
-      Con::executef("onDataBlockObjectReceived", Con::getIntArg(mIndex), Con::getIntArg(mTotal));
+      Con::executef("onDataBlockObjectReceived", mIndex, mTotal);
 
       String &errorBuffer = NetConnection::getErrorBuffer();
                      
@@ -328,9 +329,9 @@ void Sim3DAudioEvent::pack(NetConnection *con, BitStream *bstream)
       AssertFatal((1.0 - ((q.x * q.x) + (q.y * q.y) + (q.z * q.z))) >= (0.0 - 0.001),
                   "QuatF::normalize() is broken in Sim3DAudioEvent");
 
-      bstream->writeFloat(q.x,SoundRotBits);
-      bstream->writeFloat(q.y,SoundRotBits);
-      bstream->writeFloat(q.z,SoundRotBits);
+      bstream->writeSignedFloat(q.x,SoundRotBits);
+      bstream->writeSignedFloat(q.y,SoundRotBits);
+      bstream->writeSignedFloat(q.z,SoundRotBits);
       bstream->writeFlag(q.w < 0.0);
    }
 
@@ -352,9 +353,9 @@ void Sim3DAudioEvent::unpack(NetConnection *con, BitStream *bstream)
 
    if (bstream->readFlag()) {
       QuatF q;
-      q.x = bstream->readFloat(SoundRotBits);
-      q.y = bstream->readFloat(SoundRotBits);
-      q.z = bstream->readFloat(SoundRotBits);
+      q.x = bstream->readSignedFloat(SoundRotBits);
+      q.y = bstream->readSignedFloat(SoundRotBits);
+      q.z = bstream->readSignedFloat(SoundRotBits);
       F32 value = ((q.x * q.x) + (q.y * q.y) + (q.z * q.z));
 // #ifdef __linux
       // Hmm, this should never happen, but it does...

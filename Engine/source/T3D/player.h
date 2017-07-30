@@ -40,6 +40,10 @@ class SplashData;
 class PhysicsPlayer;
 class Player;
 
+#ifdef TORQUE_OPENVR
+class OpenVRTrackedObject;
+#endif
+
 //----------------------------------------------------------------------------
 
 struct PlayerData: public ShapeBaseData {
@@ -53,6 +57,10 @@ struct PlayerData: public ShapeBaseData {
       BUBBLE_EMITTER = 2,
    };
    bool renderFirstPerson;    ///< Render the player shape in first person
+
+   /// Render shadows while in first person when 
+   /// renderFirstPerson is disabled.
+   bool firstPersonShadows; 
 
    StringTableEntry  imageAnimPrefix;                             ///< Passed along to mounted images to modify
                                                                   ///  animation sequences played in third person. [optional]
@@ -186,13 +194,15 @@ struct PlayerData: public ShapeBaseData {
       FootHard,
       FootMetal,
       FootSnow,
+      MaxSoundOffsets,
       FootShallowSplash,
       FootWading,
       FootUnderWater,
       FootBubbles,
       MoveBubbles,
       WaterBreath,
-      ImpactSoft,
+      ImpactStart,
+      ImpactSoft = ImpactStart,
       ImpactHard,
       ImpactMetal,
       ImpactSnow,
@@ -381,6 +391,9 @@ public:
       NumPoseBits = 3
    };
 
+   /// The ExtendedMove position/rotation index used for head movements
+   static S32 smExtendedMoveHeadPosRotIndex;
+
 protected:
 
    /// Bit masks for different types of events
@@ -389,16 +402,6 @@ protected:
       MoveMask     = Parent::NextFreeMask << 1,
       ImpactMask   = Parent::NextFreeMask << 2,
       NextFreeMask = Parent::NextFreeMask << 3
-   };
-
-   struct Range {
-      Range(F32 _min,F32 _max) {
-         min = _min;
-         max = _max;
-         delta = _max - _min;
-      };
-      F32 min,max;
-      F32 delta;
    };
 
    SimObjectPtr<ParticleEmitter> mSplashEmitter[PlayerData::NUM_SPLASH_EMITTERS];
@@ -440,6 +443,10 @@ protected:
 
    bool mUseHeadZCalc;              ///< Including mHead.z in transform calculations
 
+   F32 mLastAbsoluteYaw;            ///< Stores that last absolute yaw value as passed in by ExtendedMove
+   F32 mLastAbsolutePitch;          ///< Stores that last absolute pitch value as passed in by ExtendedMove
+   F32 mLastAbsoluteRoll;           ///< Stores that last absolute roll value as passed in by ExtendedMove
+
    S32 mMountPending;               ///< mMountPending suppresses tickDelay countdown so players will sit until
                                     ///< their mount, or another animation, comes through (or 13 seconds elapses).
 
@@ -477,7 +484,7 @@ protected:
    /// @{
 
    struct ActionAnimation {
-      U32 action;
+      S32 action;
       TSThread* thread;
       S32 delayTicks;               // before picking another.
       bool forward;
@@ -498,9 +505,6 @@ protected:
    TSThread* mHeadHThread;
    TSThread* mRecoilThread;
    TSThread* mImageStateThread;
-   static Range mArmRange;
-   static Range mHeadVRange;
-   static Range mHeadHRange;
    /// @}
 
    bool mInMissionArea;       ///< Are we in the mission area?
@@ -517,6 +521,10 @@ protected:
 
    Point3F mLastPos;          ///< Holds the last position for physics updates
    Point3F mLastWaterPos;     ///< Same as mLastPos, but for water
+
+#ifdef TORQUE_OPENVR
+   SimObjectPtr<OpenVRTrackedObject> mControllers[2];
+#endif
 
    struct ContactInfo 
    {
@@ -577,11 +585,16 @@ protected:
 
    PhysicsPlayer* getPhysicsRep() const { return mPhysicsRep; }
 
+#ifdef TORQUE_OPENVR
+   void setControllers(Vector<OpenVRTrackedObject*> controllerList);
+#endif
+
   protected:
    virtual void reSkin();
 
    void setState(ActionState state, U32 ticks=0);
    void updateState();
+
 
    // Jetting
    bool mJetting;
@@ -615,7 +628,7 @@ protected:
 
    /// @name Mounted objects
    /// @{
-   virtual void onUnmount( ShapeBase *obj, S32 node );
+   virtual void onUnmount( SceneObject *obj, S32 node );
    virtual void unmount();
    /// @}
 
@@ -683,9 +696,9 @@ public:
 
    void setTransform(const MatrixF &mat);
    void getEyeTransform(MatrixF* mat);
-   void getEyeBaseTransform(MatrixF* mat);
+   void getEyeBaseTransform(MatrixF* mat, bool includeBank);
    void getRenderEyeTransform(MatrixF* mat);
-   void getRenderEyeBaseTransform(MatrixF* mat);
+   void getRenderEyeBaseTransform(MatrixF* mat, bool includeBank);
    void getCameraParameters(F32 *min, F32 *max, Point3F *offset, MatrixF *rot);
    void getMuzzleTransform(U32 imageSlot,MatrixF* mat);
    void getRenderMuzzleTransform(U32 imageSlot,MatrixF* mat);   

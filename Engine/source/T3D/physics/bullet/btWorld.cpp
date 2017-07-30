@@ -34,7 +34,6 @@
 #include "scene/sceneRenderState.h"
 #include "T3D/gameBase/gameProcess.h"
 
-
 BtWorld::BtWorld() :
    mProcessList( NULL ),
    mIsSimulating( false ),
@@ -42,8 +41,7 @@ BtWorld::BtWorld() :
    mTickCount( 0 ),
    mIsEnabled( false ),
    mEditorTimeScale( 1.0f ),
-   mDynamicsWorld( NULL ),
-   mThreadSupportCollision( NULL )
+   mDynamicsWorld( NULL )
 {
 } 
 
@@ -55,33 +53,7 @@ bool BtWorld::initWorld( bool isServer, ProcessList *processList )
 {
    // Collision configuration contains default setup for memory, collision setup.
    mCollisionConfiguration = new btDefaultCollisionConfiguration();
-
-   // TODO: There is something wrong with multithreading
-   // and compound convex shapes... so disable it for now.
-   static const U32 smMaxThreads = 1;
-
-   // Different initialization with threading enabled.
-   if ( smMaxThreads > 1 )
-   {
-	   
-	   // TODO: ifdef assumes smMaxThread is always one at this point. MACOSX support to be decided
-#ifdef WIN32
-      mThreadSupportCollision = new Win32ThreadSupport( 
-         Win32ThreadSupport::Win32ThreadConstructionInfo(   isServer ? "bt_servercol" : "bt_clientcol",
-								                                    processCollisionTask,
-								                                    createCollisionLocalStoreMemory,
-								                                    smMaxThreads ) );
-      
-      mDispatcher = new	SpuGatheringCollisionDispatcher( mThreadSupportCollision,
-                                                         smMaxThreads,
-                                                         mCollisionConfiguration );
-#endif // WIN32
-   }
-   else
-   {
-      mThreadSupportCollision = NULL;
-      mDispatcher = new	btCollisionDispatcher( mCollisionConfiguration );
-   }
+   mDispatcher = new	btCollisionDispatcher( mCollisionConfiguration );
   
    btVector3 worldMin( -2000, -2000, -1000 );
    btVector3 worldMax( 2000, 2000, 1000 );
@@ -130,7 +102,6 @@ void BtWorld::_destroy()
    SAFE_DELETE( mSolver );
    SAFE_DELETE( mBroadphase );
    SAFE_DELETE( mDispatcher );
-   SAFE_DELETE( mThreadSupportCollision );
    SAFE_DELETE( mCollisionConfiguration );
 }
 
@@ -140,20 +111,20 @@ void BtWorld::tickPhysics( U32 elapsedMs )
       return;
 
    // Did we forget to call getPhysicsResults somewhere?
-   AssertFatal( !mIsSimulating, "PhysXWorld::tickPhysics() - Already simulating!" );
+   AssertFatal( !mIsSimulating, "BtWorld::tickPhysics() - Already simulating!" );
 
    // The elapsed time should be non-zero and 
    // a multiple of TickMs!
    AssertFatal(   elapsedMs != 0 &&
-                  ( elapsedMs % TickMs ) == 0 , "PhysXWorld::tickPhysics() - Got bad elapsed time!" );
+                  ( elapsedMs % TickMs ) == 0 , "BtWorld::tickPhysics() - Got bad elapsed time!" );
 
    PROFILE_SCOPE(BtWorld_TickPhysics);
 
    // Convert it to seconds.
    const F32 elapsedSec = (F32)elapsedMs * 0.001f;
 
-   // Simulate... it is recommended to always use Bullet's default fixed timestep/
-   mDynamicsWorld->stepSimulation( elapsedSec * mEditorTimeScale );
+   // Simulate
+   mDynamicsWorld->stepSimulation( elapsedSec * mEditorTimeScale, smPhysicsMaxSubSteps, smPhysicsStepTime);
 
    mIsSimulating = true;
 
@@ -282,7 +253,7 @@ void BtWorld::explosion( const Point3F &pos, F32 radius, F32 forceMagnitude )
 
 void BtWorld::onDebugDraw( const SceneRenderState *state )
 {
-   mDebugDraw.setCuller( &state->getFrustum() );
+   mDebugDraw.setCuller( &state->getCullingFrustum() );
 
    mDynamicsWorld->setDebugDrawer( &mDebugDraw );
    mDynamicsWorld->debugDrawWorld();

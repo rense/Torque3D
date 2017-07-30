@@ -44,6 +44,7 @@
 #include "sfx/sfxTypes.h"
 #include "scene/sceneManager.h"
 #include "core/stream/fileStream.h"
+#include "T3D/fx/cameraFXMgr.h"
 
 //----------------------------------------------------------------------------
 
@@ -96,14 +97,14 @@ ConsoleDocClass( ShapeBaseImageData,
    "@ingroup gameObjects\n"
 );
 
-IMPLEMENT_CALLBACK( ShapeBaseImageData, onMount, void, ( ShapeBase* obj, S32 slot, F32 dt ), ( obj, slot, dt ),
+IMPLEMENT_CALLBACK( ShapeBaseImageData, onMount, void, ( SceneObject* obj, S32 slot, F32 dt ), ( obj, slot, dt ),
    "@brief Called when the Image is first mounted to the object.\n\n"
 
    "@param obj object that this Image has been mounted to\n"
    "@param slot Image mount slot on the object\n"
    "@param dt time remaining in this Image update\n" );
 
-IMPLEMENT_CALLBACK( ShapeBaseImageData, onUnmount, void, ( ShapeBase* obj, S32 slot, F32 dt ), ( obj, slot, dt ),
+IMPLEMENT_CALLBACK( ShapeBaseImageData, onUnmount, void, ( SceneObject* obj, S32 slot, F32 dt ), ( obj, slot, dt ),
    "@brief Called when the Image is unmounted from the object.\n\n"
 
    "@param obj object that this Image has been unmounted from\n"
@@ -188,7 +189,7 @@ ShapeBaseImageData::ShapeBaseImageData()
    lightRadius = 10.f;
    lightBrightness = 1.0f;
 
-   shapeName = "";
+   shapeName = "core/art/shapes/noshape.dts";
    shapeNameFP = "";
    imageAnimPrefix = "";
    imageAnimPrefixFP = "";
@@ -203,7 +204,7 @@ ShapeBaseImageData::ShapeBaseImageData()
    scriptAnimTransitionTime = 0.25f;
 
    //
-   for (int i = 0; i < MaxStates; i++) {
+   for (S32 i = 0; i < MaxStates; i++) {
       stateName[i] = 0;
 
       stateTransitionLoaded[i] = 0;
@@ -297,6 +298,9 @@ ShapeBaseImageData::ShapeBaseImageData()
    shakeCamera = false;
    camShakeFreq = Point3F::Zero;
    camShakeAmp = Point3F::Zero;
+   camShakeDuration = 1.5f;
+   camShakeRadius = 3.0f;
+   camShakeFalloff = 10.0f;
 }
 
 ShapeBaseImageData::~ShapeBaseImageData()
@@ -405,12 +409,12 @@ bool ShapeBaseImageData::preload(bool server, String &errorStr)
    // Resolve objects transmitted from server
    if (!server) {
       if (projectile)
-         if (Sim::findObject(SimObjectId(projectile), projectile) == false)
+         if (Sim::findObject(SimObjectId((uintptr_t)projectile), projectile) == false)
             Con::errorf(ConsoleLogEntry::General, "Error, unable to load projectile for shapebaseimagedata");
 
       for (U32 i = 0; i < MaxStates; i++) {
          if (state[i].emitter)
-            if (!Sim::findObject(SimObjectId(state[i].emitter), state[i].emitter))
+            if (!Sim::findObject(SimObjectId((uintptr_t)state[i].emitter), state[i].emitter))
                Con::errorf(ConsoleLogEntry::General, "Error, unable to load emitter for image datablock");
                
          String str;
@@ -462,7 +466,10 @@ bool ShapeBaseImageData::preload(bool server, String &errorStr)
             Torque::FS::FileNodeRef    fileRef = Torque::FS::GetFileNode(shape[i].getPath());
 
             if (!fileRef)
+            {
+               errorStr = String::ToString("ShapeBaseImageData: Couldn't load shape \"%s\"",name);
                return false;
+            }
 
             if(server)
             {
@@ -687,10 +694,6 @@ void ShapeBaseImageData::initPersistFields()
       "@see animateOnServer\n\n");
 
    addField( "correctMuzzleVector", TypeBool,  Offset(correctMuzzleVector, ShapeBaseImageData),
-      "@brief Flag to adjust the aiming vector to the eye's LOS point.\n\n"
-      "@see ShapeBase::getMuzzleVector()" );
-
-   addField( "correctMuzzleVector", TypeBool,  Offset(correctMuzzleVector, ShapeBaseImageData),
       "@brief Flag to adjust the aiming vector to the eye's LOS point when in 1st person view.\n\n"
       "@see ShapeBase::getMuzzleVector()" );
 
@@ -740,10 +743,7 @@ void ShapeBaseImageData::initPersistFields()
       "@see lightType");
 
    addField( "shakeCamera", TypeBool, Offset(shakeCamera, ShapeBaseImageData),
-      "@brief Flag indicating whether the camera should shake when this Image fires.\n\n"
-      "@note Camera shake only works properly if the player is in control of "
-      "the one and only shapeBase object in the scene which fires an Image that "
-      "uses camera shake." );
+      "@brief Flag indicating whether the camera should shake when this Image fires.\n\n" );
 
    addField( "camShakeFreq", TypePoint3F, Offset(camShakeFreq, ShapeBaseImageData),
       "@brief Frequency of the camera shaking effect.\n\n"
@@ -752,6 +752,16 @@ void ShapeBaseImageData::initPersistFields()
    addField( "camShakeAmp", TypePoint3F, Offset(camShakeAmp, ShapeBaseImageData),
       "@brief Amplitude of the camera shaking effect.\n\n"
       "@see shakeCamera" );
+
+   addField( "camShakeDuration", TypeF32, Offset(camShakeDuration, ShapeBaseImageData),
+      "Duration (in seconds) to shake the camera." );
+
+   addField( "camShakeRadius", TypeF32, Offset(camShakeRadius, ShapeBaseImageData),
+      "Radial distance that a camera's position must be within relative to the "
+      "center of the explosion to be shaken." );
+
+   addField( "camShakeFalloff", TypeF32, Offset(camShakeFalloff, ShapeBaseImageData),
+      "Falloff value for the camera shake." );
 
    addField( "casing", TYPEID< DebrisData >(), Offset(casing, ShapeBaseImageData),
       "@brief DebrisData datablock to use for ejected casings.\n\n"
@@ -1009,7 +1019,7 @@ void ShapeBaseImageData::packData(BitStream* stream)
 
    // Write the projectile datablock
    if (stream->writeFlag(projectile))
-      stream->writeRangedU32(packed? SimObjectId(projectile):
+      stream->writeRangedU32(packed? SimObjectId((uintptr_t)projectile):
                              projectile->getId(),DataBlockObjectIdFirst,DataBlockObjectIdLast);
 
    stream->writeFlag(cloakable);
@@ -1029,6 +1039,9 @@ void ShapeBaseImageData::packData(BitStream* stream)
    {      
       mathWrite( *stream, camShakeFreq );
       mathWrite( *stream, camShakeAmp );
+      stream->write( camShakeDuration );
+      stream->write( camShakeRadius );
+      stream->write( camShakeFalloff );
    }
 
    mathWrite( *stream, shellExitDir );
@@ -1037,7 +1050,7 @@ void ShapeBaseImageData::packData(BitStream* stream)
 
    if( stream->writeFlag( casing ) )
    {
-      stream->writeRangedU32(packed? SimObjectId(casing):
+      stream->writeRangedU32(packed? SimObjectId((uintptr_t)casing):
          casing->getId(),DataBlockObjectIdFirst,DataBlockObjectIdLast);
    }
 
@@ -1126,7 +1139,7 @@ void ShapeBaseImageData::packData(BitStream* stream)
 
          if (stream->writeFlag(s.emitter))
          {
-            stream->writeRangedU32(packed? SimObjectId(s.emitter):
+            stream->writeRangedU32(packed? SimObjectId((uintptr_t)s.emitter):
                                    s.emitter->getId(),DataBlockObjectIdFirst,DataBlockObjectIdLast);
             stream->write(s.emitterTime);
 
@@ -1209,7 +1222,10 @@ void ShapeBaseImageData::unpackData(BitStream* stream)
    if ( shakeCamera )
    {
       mathRead( *stream, &camShakeFreq );
-      mathRead( *stream, &camShakeAmp );      
+      mathRead( *stream, &camShakeAmp );
+      stream->read( &camShakeDuration );
+      stream->read( &camShakeRadius );
+      stream->read( &camShakeFalloff );
    }
 
    mathRead( *stream, &shellExitDir );
@@ -1861,7 +1877,7 @@ void ShapeBase::getImageTransform(U32 imageSlot,MatrixF* mat)
          // We need to animate, even on the server, to make sure the nodes are in the correct location.
          image.shapeInstance[shapeIndex]->animate();
 
-         getEyeBaseTransform(&nmat);
+         getEyeBaseTransform(&nmat, mDataBlock->mountedImagesBank);
 
          MatrixF mountTransform = image.shapeInstance[shapeIndex]->mNodeTransforms[data.eyeMountNode[shapeIndex]];
 
@@ -1900,7 +1916,7 @@ void ShapeBase::getImageTransform(U32 imageSlot,S32 node,MatrixF* mat)
             image.shapeInstance[shapeIndex]->animate();
 
             MatrixF emat;
-            getEyeBaseTransform(&emat);
+            getEyeBaseTransform(&emat, mDataBlock->mountedImagesBank);
 
             MatrixF mountTransform = image.shapeInstance[shapeIndex]->mNodeTransforms[data.eyeMountNode[shapeIndex]];
             mountTransform.affineInverse();
@@ -1985,7 +2001,7 @@ void ShapeBase::getRenderImageTransform( U32 imageSlot, MatrixF* mat, bool noEye
 
       MatrixF nmat;
       if ( data.useEyeNode && isFirstPerson() && data.eyeMountNode[shapeIndex] != -1 ) {
-         getRenderEyeBaseTransform(&nmat);
+         getRenderEyeBaseTransform(&nmat, mDataBlock->mountedImagesBank);
 
          MatrixF mountTransform = image.shapeInstance[shapeIndex]->mNodeTransforms[data.eyeMountNode[shapeIndex]];
 
@@ -2023,7 +2039,7 @@ void ShapeBase::getRenderImageTransform(U32 imageSlot,S32 node,MatrixF* mat)
          if ( data.useEyeNode && isFirstPerson() && data.eyeMountNode[shapeIndex] != -1 )
          {
             MatrixF emat;
-            getRenderEyeBaseTransform(&emat);
+            getRenderEyeBaseTransform(&emat, mDataBlock->mountedImagesBank);
 
             MatrixF mountTransform = image.shapeInstance[shapeIndex]->mNodeTransforms[data.eyeMountNode[shapeIndex]];
             mountTransform.affineInverse();
@@ -2597,6 +2613,10 @@ void ShapeBase::setImageState(U32 imageSlot, U32 newState,bool force)
       ejectShellCasing( imageSlot );
    }
 
+   // Shake camera on client.
+   if (isGhost() && nextStateData.fire && image.dataBlock->shakeCamera) {
+      shakeCamera( imageSlot );
+   }
 
    // Server must animate the shape if it is a firestate...
    if (isServerObject() && (image.dataBlock->state[newState].fire || image.dataBlock->state[newState].altFire))
@@ -2618,7 +2638,7 @@ void ShapeBase::setImageState(U32 imageSlot, U32 newState,bool force)
       F32 randomPos = Platform::getRandom();
       for (U32 i=0; i<ShapeBaseImageData::MaxShapes; ++i)
       {
-         if (!image.dataBlock->shapeIsValid[i] || i != imageShapeIndex && !image.doAnimateAllShapes)
+         if (!image.dataBlock->shapeIsValid[i] || (i != imageShapeIndex && !image.doAnimateAllShapes))
             continue;
 
          if (image.animThread[i] && image.state->sequence[i] != -1 && image.state->flashSequence[i]) {
@@ -2759,7 +2779,7 @@ void ShapeBase::setImageState(U32 imageSlot, U32 newState,bool force)
    updateAnimThread(imageSlot, imageShapeIndex, lastState);
    for (U32 i=0; i<ShapeBaseImageData::MaxShapes; ++i)
    {
-      if (!image.dataBlock->shapeIsValid[i] || i != imageShapeIndex && !image.doAnimateAllShapes)
+      if (!image.dataBlock->shapeIsValid[i] || (i != imageShapeIndex && !image.doAnimateAllShapes))
          continue;
 
       // Start spin thread
@@ -2814,7 +2834,7 @@ void ShapeBase::updateAnimThread(U32 imageSlot, S32 imageShapeIndex, ShapeBaseIm
    F32 randomPos = Platform::getRandom();
    for (U32 i=0; i<ShapeBaseImageData::MaxShapes; ++i)
    {
-      if (!image.dataBlock->shapeIsValid[i] || i != imageShapeIndex && !image.doAnimateAllShapes)
+      if (!image.dataBlock->shapeIsValid[i] || (i != imageShapeIndex && !image.doAnimateAllShapes))
          continue;
 
       if (image.animThread[i] && stateData.sequence[i] != -1) 
@@ -3056,12 +3076,12 @@ TICKAGAIN:
    U32 imageShapeIndex = getImageShapeIndex(image);
    for (U32 i=0; i<ShapeBaseImageData::MaxShapes; ++i)
    {
-      if (!image.dataBlock->shapeIsValid[i] || i != imageShapeIndex && !image.doAnimateAllShapes)
+      if (!image.dataBlock->shapeIsValid[i] || (i != imageShapeIndex && !image.doAnimateAllShapes))
          continue;
 
       if (image.spinThread[i])
       {
-         float timeScale;
+         F32 timeScale;
 
          switch (stateData.spin) 
          {
@@ -3092,7 +3112,10 @@ TICKAGAIN:
    }
 
    if ( image.rDT > 0.0f && image.delayTime > 0.0f && imageData.useRemainderDT && dt != 0.0f )
+   {
+      dt = image.rDT;
       goto TICKAGAIN;
+   }
 }
 
 
@@ -3108,7 +3131,7 @@ void ShapeBase::updateImageAnimation(U32 imageSlot, F32 dt)
    // Advance animation threads
    for (U32 i=0; i<ShapeBaseImageData::MaxShapes; ++i)
    {
-      if (!image.dataBlock->shapeIsValid[i] || i != imageShapeIndex && !image.doAnimateAllShapes)
+      if (!image.dataBlock->shapeIsValid[i] || (i != imageShapeIndex && !image.doAnimateAllShapes))
          continue;
 
       if (image.ambientThread[i])
@@ -3259,7 +3282,7 @@ void ShapeBase::submitLights( LightManager *lm, bool staticLighting )
             {
             S32 elapsed = Sim::getCurrentTime() - image.lightStart;
             if ( elapsed > imageData->lightDuration )
-               return;
+               continue;
             intensity = ( 1.0 - (F32)elapsed / (F32)imageData->lightDuration ) * imageData->lightBrightness;
             break;
             }
@@ -3337,6 +3360,60 @@ void ShapeBase::ejectShellCasing( U32 imageSlot )
 
    if (!casing->registerObject())
       delete casing;
+   else
+      casing->init( shellPos, shellVel );
+}
 
-   casing->init( shellPos, shellVel );
+void ShapeBase::shakeCamera( U32 imageSlot )
+{
+   MountedImage& image = mMountedImageList[imageSlot];
+   ShapeBaseImageData* imageData = image.dataBlock;
+
+   if (!imageData->shakeCamera)
+      return;
+
+   // Warning: this logic was duplicated from Explosion.
+
+   // first check if explosion is near camera
+   GameConnection* connection = GameConnection::getConnectionToServer();
+   ShapeBase *obj = dynamic_cast<ShapeBase*>(connection->getControlObject());
+
+   bool applyShake = true;
+
+   if (obj)
+   {
+      ShapeBase* cObj = obj;
+      while ((cObj = cObj->getControlObject()) != 0)
+      {
+         if (cObj->useObjsEyePoint())
+         {
+            applyShake = false;
+            break;
+         }
+      }
+   }
+
+   if (applyShake && obj)
+   {
+      VectorF diff;
+      getMuzzlePoint(imageSlot, &diff);
+      diff = obj->getPosition() - diff;
+      F32 dist = diff.len();
+      if (dist < imageData->camShakeRadius)
+      {
+         CameraShake *camShake = new CameraShake;
+         camShake->setDuration(imageData->camShakeDuration);
+         camShake->setFrequency(imageData->camShakeFreq);
+
+         F32 falloff =  dist / imageData->camShakeRadius;
+         falloff = 1.0f + falloff * 10.0f;
+         falloff = 1.0f / (falloff * falloff);
+
+         VectorF shakeAmp = imageData->camShakeAmp * falloff;
+         camShake->setAmplitude(shakeAmp);
+         camShake->setFalloff(imageData->camShakeFalloff);
+         camShake->init();
+         gCamFXMgr.addFX(camShake);
+      }
+   }
 }

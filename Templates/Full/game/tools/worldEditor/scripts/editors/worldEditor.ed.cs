@@ -119,6 +119,9 @@ function WorldEditor::onSelectionCentroidChanged( %this )
 {
    // Inform the camera
    commandToServer('EditorOrbitCameraSelectChange', %this.getSelectionSize(), %this.getSelectionCentroid());
+   
+   // Refresh inspector.
+   Inspector.refresh();
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -126,7 +129,7 @@ function WorldEditor::onSelectionCentroidChanged( %this )
 function WorldEditor::init(%this)
 {
    // add objclasses which we do not want to collide with
-   %this.ignoreObjClass(Sky, AIObjective);
+   %this.ignoreObjClass(Sky);
 
    // editing modes
    %this.numEditModes = 3;
@@ -137,7 +140,7 @@ function WorldEditor::init(%this)
    // context menu
    new GuiControl(WEContextPopupDlg, EditorGuiGroup)
    {
-      profile = "GuiModelessDialogProfile";
+      profile = "ToolsGuiModelessDialogProfile";
       horizSizing = "width";
       vertSizing = "height";
       position = "0 0";
@@ -149,7 +152,7 @@ function WorldEditor::init(%this)
 
       new GuiPopUpMenuCtrl(WEContextPopup)
       {
-         profile = "GuiScrollProfile";
+         profile = "ToolsGuiScrollProfile";
          position = "0 0";
          extent = "0 0";
          minExtent = "0 0";

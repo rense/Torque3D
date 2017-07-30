@@ -73,6 +73,9 @@ class Camera: public ShapeBase
          CameraLastMode  = EditOrbitMode
       };
 
+      /// The ExtendedMove position/rotation index used for camera movements
+      static S32 smExtendedMovePosRotIndex;
+
    protected:
 
       enum MaskBits
@@ -92,6 +95,8 @@ class Camera: public ShapeBase
          VectorF rotVec;
       };
 
+      CameraData* mDataBlock;
+
       Point3F mRot;
       StateDelta mDelta;
 
@@ -105,6 +110,10 @@ class Camera: public ShapeBase
       F32 mCurOrbitDist;
       Point3F mPosition;
       bool mObservingClientObject;
+
+      F32 mLastAbsoluteYaw;            ///< Stores that last absolute yaw value as passed in by ExtendedMove
+      F32 mLastAbsolutePitch;          ///< Stores that last absolute pitch value as passed in by ExtendedMove
+      F32 mLastAbsoluteRoll;           ///< Stores that last absolute roll value as passed in by ExtendedMove
 
       /// @name NewtonFlyMode
       /// @{
@@ -223,9 +232,11 @@ class Camera: public ShapeBase
 
       virtual bool onAdd();
       virtual void onRemove();
+      virtual bool onNewDataBlock( GameBaseData *dptr, bool reload );
       virtual void processTick( const Move* move );
       virtual void interpolateTick( F32 delta);
       virtual void getCameraTransform( F32* pos,MatrixF* mat );
+      virtual void getEyeCameraTransform( IDisplayDevice *display, U32 eyeId, MatrixF *outMat );
 
       virtual void writePacketData( GameConnection* conn, BitStream* stream );
       virtual void readPacketData( GameConnection* conn, BitStream* stream );

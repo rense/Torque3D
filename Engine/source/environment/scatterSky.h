@@ -57,15 +57,6 @@ class TimeOfDay;
 class CubemapData;
 class MatrixSet;
 
-
-GFXDeclareVertexFormat( ScatterSkyVertex )
-{
-   // .xyz = coords
-   Point3F point;
-   VectorF normal;
-   ColorF color;
-};
-
 class ScatterSky : public SceneObject, public ISceneLight
 {
    typedef SceneObject Parent;
@@ -134,7 +125,7 @@ protected:
    void _getSunColor( ColorF *outColor );
    void _interpolateColors();
 
-   void _conformLights(); 
+   void _conformLights();
 
    void _updateTimeOfDay( TimeOfDay *timeofDay, F32 time );
 
@@ -152,7 +143,7 @@ protected:
    static const F32 smAtmosphereRadius;
    static const F32 smViewerHeight;
 
-#define CURVE_COUNT 4
+#define CURVE_COUNT 5
 
    FloatCurve mCurves[CURVE_COUNT];
 
@@ -161,7 +152,7 @@ protected:
 
    F32 mRayleighScattering;
    F32 mRayleighScattering4PI;
-
+   F32 mSunSize;
    F32 mMieScattering;
    F32 mMieScattering4PI;
 
@@ -180,6 +171,7 @@ protected:
 
    F32 mExposure;
    F32 mNightInterpolant;
+   F32 mZOffset;
 
    VectorF mLightDir;
    VectorF mSunDir;
@@ -200,27 +192,29 @@ protected:
    ColorF mSunColor;       ///< Not a field
    ColorF mFogColor;       ///< Not a field
 
-   ColorF mAmbientScale;   
+   ColorF mAmbientScale;
    ColorF mSunScale;
    ColorF mFogScale;
 
    LightInfo *mLight;
 
    bool mCastShadows;
+   S32 mStaticRefreshFreq;
+   S32 mDynamicRefreshFreq;
    bool mDirty;
 
    LightFlareData *mFlareData;
    LightFlareState mFlareState;
    F32 mFlareScale;
-   
-   bool mMoonEnabled;   
-   String mMoonMatName;   
+
+   bool mMoonEnabled;
+   String mMoonMatName;
    BaseMatInstance *mMoonMatInst;
    F32 mMoonScale;
-   ColorF mMoonTint;   
+   ColorF mMoonTint;
    VectorF mMoonLightDir;
    CubemapData *mNightCubemap;
-   String mNightCubemapName;   
+   String mNightCubemapName;
    bool mUseNightCubemap;
    MatrixSet *mMatrixSet;
 
@@ -228,7 +222,7 @@ protected:
 
    // Prim buffer, vertex buffer and shader for rendering.
    GFXPrimitiveBufferHandle mPrimBuffer;
-   GFXVertexBufferHandle<ScatterSkyVertex> mVB;
+   GFXVertexBufferHandle<GFXVertexP> mVB;
    GFXShaderRef mShader;
 
    GFXStateBlockRef mStateBlock;
@@ -246,6 +240,10 @@ protected:
    GFXShaderConstHandle *mInverseWavelengthSC;
    GFXShaderConstHandle *mNightInterpolantAndExposureSC;
    GFXShaderConstHandle *mUseCubemapSC;
+   F32 mColorizeAmt;
+   ColorF mColorize;
+   GFXShaderConstHandle *mColorizeSC;
+
 };
 
 #endif // _SCATTERSKY_H_

@@ -37,7 +37,6 @@ static U32 sScanTypeMask =       PlayerObjectType     |
                                  VehicleObjectType;
 
 static U32 sAimTypeMask =        TerrainObjectType       |
-                                 InteriorObjectType      |
                                  WaterObjectType         | 
                                  PlayerObjectType        |
                                  StaticShapeObjectType   | 
@@ -100,7 +99,7 @@ AITurretShapeData::AITurretShapeData()
 
    weaponLeadVelocity = 0;
 
-   for (int i = 0; i < MaxStates; i++) {
+   for (S32 i = 0; i < MaxStates; i++) {
       stateName[i] = 0;
       stateTransitionAtRest[i] = 0;
       stateTransitionNotAtRest[i] = 0;
@@ -1158,7 +1157,7 @@ U32 AITurretShape::packUpdate(NetConnection *connection, U32 mask, BitStream *bs
    U32 retMask = Parent::packUpdate(connection,mask,bstream);
 
    // Indicate that the transform has changed to update the scan box
-   bstream->writeFlag(mask & PositionMask | ExtendedInfoMask);
+   bstream->writeFlag(mask & (PositionMask | ExtendedInfoMask));
 
    // Handle any state changes that need to be passed along
    if (bstream->writeFlag(mask & TurretStateMask))

@@ -409,6 +409,49 @@ function stopRecordingDemo( %val )
 moveMap.bind( keyboard, F3, startRecordingDemo );
 moveMap.bind( keyboard, F4, stopRecordingDemo );
 
+//------------------------------------------------------------------------------
+// Theora Video Capture (Records a movie file)  
+//------------------------------------------------------------------------------
+
+function toggleMovieRecording(%val)
+{
+   if (!%val)
+      return;
+
+   %movieEncodingType = "THEORA";  // Valid encoder values are "PNG" and "THEORA" (default). 
+   %movieFPS = 30;  // video capture frame rate.
+   
+   if (!$RecordingMovie)
+   {
+       // locate a non-existent filename to use
+       for(%i = 0; %i < 1000; %i++)
+       {
+          %num = %i;
+          if(%num < 10)
+             %num = "0" @ %num;
+          if(%num < 100)
+             %num = "0" @ %num;
+       
+          %filePath = "movies/movie" @ %num;
+          if(!isfile(%filePath))
+             break;
+       }
+       if(%i == 1000)
+          return;
+
+      // Start the movie recording
+      recordMovie(%filePath, %movieFPS, %movieEncodingType);
+      
+   }
+   else
+   {
+      // Stop the current recording
+      stopMovie();
+   }
+}
+
+// Key binding works at any time and not just while in a game.
+GlobalActionMap.bind(keyboard, "alt m", toggleMovieRecording);
 
 //------------------------------------------------------------------------------
 // Helper Functions
@@ -441,71 +484,12 @@ GlobalActionMap.bind(keyboard, "ctrl o", bringUpOptions);
 //------------------------------------------------------------------------------
 // Debugging Functions
 //------------------------------------------------------------------------------
-
-$MFDebugRenderMode = 0;
-function cycleDebugRenderMode(%val)
+function showMetrics(%val)
 {
-   if (!%val)
-      return;
-
-   $MFDebugRenderMode++;
-
-   if ($MFDebugRenderMode > 16)
-      $MFDebugRenderMode = 0;
-   if ($MFDebugRenderMode == 15)
-      $MFDebugRenderMode = 16;
-
-   setInteriorRenderMode($MFDebugRenderMode);
-
-   if (isObject(ChatHud))
-   {
-      %message = "Setting Interior debug render mode to ";
-      %debugMode = "Unknown";
-
-      switch($MFDebugRenderMode)
-      {
-         case 0:
-            %debugMode = "NormalRender";
-         case 1:
-            %debugMode = "NormalRenderLines";
-         case 2:
-            %debugMode = "ShowDetail";
-         case 3:
-            %debugMode = "ShowAmbiguous";
-         case 4:
-            %debugMode = "ShowOrphan";
-         case 5:
-            %debugMode = "ShowLightmaps";
-         case 6:
-            %debugMode = "ShowTexturesOnly";
-         case 7:
-            %debugMode = "ShowPortalZones";
-         case 8:
-            %debugMode = "ShowOutsideVisible";
-         case 9:
-            %debugMode = "ShowCollisionFans";
-         case 10:
-            %debugMode = "ShowStrips";
-         case 11:
-            %debugMode = "ShowNullSurfaces";
-         case 12:
-            %debugMode = "ShowLargeTextures";
-         case 13:
-            %debugMode = "ShowHullSurfaces";
-         case 14:
-            %debugMode = "ShowVehicleHullSurfaces";
-         // Depreciated
-         //case 15:
-         //   %debugMode = "ShowVertexColors";
-         case 16:
-            %debugMode = "ShowDetailLevel";
-      }
-
-      ChatHud.addLine(%message @ %debugMode);
-   }
+   if(%val)
+      metrics("fps gfx shadow sfx terrain groundcover forest net");
 }
-
-GlobalActionMap.bind(keyboard, "F9", cycleDebugRenderMode);
+GlobalActionMap.bind(keyboard, "ctrl F2", showMetrics);
 
 //------------------------------------------------------------------------------
 //

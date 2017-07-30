@@ -34,6 +34,12 @@ singleton ShaderData( LightRayOccludeShader )
 {
    DXVertexShaderFile 	= "shaders/common/postFx/postFxV.hlsl";
    DXPixelShaderFile 	= "shaders/common/postFx/lightRay/lightRayOccludeP.hlsl";
+   
+   OGLVertexShaderFile  = "shaders/common/postFx/gl/postFxV.glsl";
+   OGLPixelShaderFile   = "shaders/common/postFx/lightRay/gl/lightRayOccludeP.glsl";
+   
+   samplerNames[0] = "$backBuffer";
+   samplerNames[1] = "$prepassTex";
 
    pixVersion = 3.0;   
 };
@@ -42,6 +48,12 @@ singleton ShaderData( LightRayShader )
 {
    DXVertexShaderFile 	= "shaders/common/postFx/postFxV.hlsl";
    DXPixelShaderFile 	= "shaders/common/postFx/lightRay/lightRayP.hlsl";
+   
+   OGLVertexShaderFile  = "shaders/common/postFx/gl/postFxV.glsl";
+   OGLPixelShaderFile   = "shaders/common/postFx/lightRay/gl/lightRayP.glsl";
+   
+   samplerNames[0] = "$frameSampler";
+   samplerNames[1] = "$backBuffer";
 
    pixVersion = 3.0;   
 };
@@ -58,8 +70,9 @@ singleton PostEffect( LightRayPostFX )
    isEnabled = false;
    allowReflectPass = false;
         
-   renderTime = "PFXAfterDiffuse";
-   renderPriority = 0.1;
+   renderTime = "PFXBeforeBin";
+   renderBin = "EditorBin";
+   renderPriority = 10;
       
    shader = LightRayOccludeShader;
    stateBlock = LightRayStateBlock;

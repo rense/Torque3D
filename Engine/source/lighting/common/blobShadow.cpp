@@ -37,7 +37,7 @@
 DepthSortList BlobShadow::smDepthSortList;
 GFXTexHandle BlobShadow::smGenericShadowTexture = NULL;
 S32 BlobShadow::smGenericShadowDim = 32;
-U32 BlobShadow::smShadowMask = TerrainObjectType | InteriorObjectType;
+U32 BlobShadow::smShadowMask = TerrainObjectType;
 F32 BlobShadow::smGenericRadiusSkew = 0.4f; // shrink radius of shape when it always uses generic shadow...
 
 Box3F gBlobShadowBox;
@@ -331,14 +331,14 @@ void BlobShadow::render( F32 camDist, const TSRenderState &rdata )
    world.mul(mLightToWorld);
    GFX->setWorldMatrix(world);
 
-   GFX->disableShaders();
+   GFX->setupGenericShaders(GFXDevice::GSModColorTexture);
 
    GFX->setStateBlock(mShadowSB);
    GFX->setTexture(0, smGenericShadowTexture);
    GFX->setVertexBuffer(mShadowBuffer);
 
    for(U32 p=0; p<mPartition.size(); p++)
-      GFX->drawPrimitive(GFXTriangleFan, mPartition[p].vertexStart, (mPartition[p].vertexCount - 2));
+      GFX->drawPrimitive(GFXTriangleStrip, mPartition[p].vertexStart, (mPartition[p].vertexCount - 2));
 
    // This is a bad nasty hack which forces the shadow to reconstruct itself every frame.
    mPartition.clear();

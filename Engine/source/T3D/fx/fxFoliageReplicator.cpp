@@ -132,7 +132,6 @@ ConsoleDocClass( fxFoliageReplicator,
 // Trig Table Lookups.
 //
 //------------------------------------------------------------------------------
-const F32 PeriodLen = (F32) 2.0f * (F32) M_PI;
 const F32 PeriodLenMinus = (F32) (2.0f * M_PI) - 0.01f;
 
 //------------------------------------------------------------------------------
@@ -146,7 +145,7 @@ void fxFoliageRenderList::SetupClipPlanes( SceneRenderState* state, const F32 fa
    const F32 nearPlane = state->getNearPlane();
    const F32 farPlane = farClipPlane;
 
-   const Frustum& frustum = state->getFrustum();
+   const Frustum& frustum = state->getCullingFrustum();
 
    // [rene, 23-Feb-11] Why isn't this preserving the ortho state of the original frustum?
 
@@ -248,7 +247,7 @@ fxFoliageCulledList::fxFoliageCulledList(Box3F SearchBox, fxFoliageCulledList* I
 
 //------------------------------------------------------------------------------
 
-void fxFoliageCulledList::FindCandidates(Box3F SearchBox, fxFoliageCulledList* InVec)
+void fxFoliageCulledList::FindCandidates(const Box3F& SearchBox, fxFoliageCulledList* InVec)
 {
    // Search the Culled List.
    for (U32 i = 0; i < InVec->GetListCount(); i++)
@@ -397,7 +396,6 @@ void fxFoliageReplicator::initPersistFields()
 
    addGroup( "Restrictions" );	// MM: Added Group Header.
       addField( "AllowOnTerrain",      TypeBool,      Offset( mFieldData.mAllowOnTerrain,       fxFoliageReplicator ), "Foliage will be placed on terrain when set." );
-      addField( "AllowOnInteriors",    TypeBool,      Offset( mFieldData.mAllowOnInteriors,     fxFoliageReplicator ), "Foliage will be placed on InteriorInstances when set." );
       addField( "AllowOnStatics",      TypeBool,      Offset( mFieldData.mAllowStatics,         fxFoliageReplicator ), "Foliage will be placed on Static shapes when set." );
       addField( "AllowOnWater",        TypeBool,      Offset( mFieldData.mAllowOnWater,         fxFoliageReplicator ), "Foliage will be placed on/under water when set." );
       addField( "AllowWaterSurface",   TypeBool,      Offset( mFieldData.mAllowWaterSurface,    fxFoliageReplicator ), "Foliage will be placed on water when set. Requires AllowOnWater." );
@@ -427,7 +425,7 @@ void fxFoliageReplicator::CreateFoliage(void)
    Point3F	MaxPoint(  0.5,  0.5,  0.5 );
 
    // Check Host.
-   AssertFatal(isClientObject(), "Trying to create Foliage on Server, this is bad!")
+   AssertFatal(isClientObject(), "Trying to create Foliage on Server, this is bad!");
 
       // Cannot continue without Foliage Texture!
       if (dStrlen(mFieldData.mFoliageFile) == 0) 
@@ -435,7 +433,6 @@ void fxFoliageReplicator::CreateFoliage(void)
 
    // Check that we can position somewhere!
    if (!(	mFieldData.mAllowOnTerrain ||
-      mFieldData.mAllowOnInteriors ||
       mFieldData.mAllowStatics ||
       mFieldData.mAllowOnWater))
    {
@@ -633,7 +630,6 @@ void fxFoliageReplicator::CreateFoliage(void)
 
             // Check Illegal Placements, fail if we hit a disallowed type.
             if (((CollisionType & TerrainObjectType) && !mFieldData.mAllowOnTerrain)	||
-               ((CollisionType & InteriorObjectType) && !mFieldData.mAllowOnInteriors)	||
                ((CollisionType & StaticShapeObjectType ) && !mFieldData.mAllowStatics)	||
                ((CollisionType & WaterObjectType) && !mFieldData.mAllowOnWater) ) continue;
 
@@ -1031,7 +1027,7 @@ void fxFoliageReplicator::SetupBuffers()
 
 //------------------------------------------------------------------------------
 
-Box3F fxFoliageReplicator::FetchQuadrant(Box3F Box, U32 Quadrant)
+Box3F fxFoliageReplicator::FetchQuadrant(const Box3F& Box, U32 Quadrant)
 {
    Box3F QuadrantBox;
 
@@ -1137,7 +1133,7 @@ void fxFoliageReplicator::ProcessQuadrant(fxFoliageQuadrantNode* pParentNode, fx
 void fxFoliageReplicator::SyncFoliageReplicators(void)
 {
    // Check Host.
-   AssertFatal(isServerObject(), "We *MUST* be on server when Synchronising Foliage!")
+   AssertFatal(isServerObject(), "We *MUST* be on server when Synchronising Foliage!");
 
       // Find the Replicator Set.
    SimSet *fxFoliageSet = dynamic_cast<SimSet*>(Sim::findObject("fxFoliageSet"));
@@ -1199,7 +1195,7 @@ void fxFoliageReplicator::DestroyFoliageItems()
 void fxFoliageReplicator::DestroyFoliage(void)
 {
    // Check Host.
-   AssertFatal(isClientObject(), "Trying to destroy Foliage on Server, this is bad!")
+   AssertFatal(isClientObject(), "Trying to destroy Foliage on Server, this is bad!");
 
       // Destroy Quad-tree.
       mPotentialFoliageNodes = 0;
@@ -1700,7 +1696,6 @@ U32 fxFoliageReplicator::packUpdate(NetConnection * con, U32 mask, BitStream * s
       stream->write(mFieldData.mLightTime);							// Foliage Light Time.
 
       stream->writeFlag(mFieldData.mAllowOnTerrain);					// Allow on Terrain.
-      stream->writeFlag(mFieldData.mAllowOnInteriors);				// Allow on Interiors.
       stream->writeFlag(mFieldData.mAllowStatics);					// Allow on Statics.
       stream->writeFlag(mFieldData.mAllowOnWater);					// Allow on Water.
       stream->writeFlag(mFieldData.mAllowWaterSurface);				// Allow on Water Surface.
@@ -1777,7 +1772,6 @@ void fxFoliageReplicator::unpackUpdate(NetConnection * con, BitStream * stream)
       stream->read(&mFieldData.mLightTime);							// Foliage Light Time.
 
       mFieldData.mAllowOnTerrain = stream->readFlag();				// Allow on Terrain.
-      mFieldData.mAllowOnInteriors = stream->readFlag();				// Allow on Interiors.
       mFieldData.mAllowStatics = stream->readFlag();					// Allow on Statics.
       mFieldData.mAllowOnWater = stream->readFlag();					// Allow on Water.
       mFieldData.mAllowWaterSurface = stream->readFlag();				// Allow on Water Surface.

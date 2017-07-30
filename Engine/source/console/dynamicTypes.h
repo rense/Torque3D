@@ -35,6 +35,9 @@
 #include "console/engineTypeInfo.h"
 #endif
 
+#ifndef _STRINGTABLE_H_
+#include "core/stringTable.h"
+#endif
 
 /// @file
 /// Support for legacy TorqueScript console types.
@@ -151,6 +154,8 @@ class ConsoleBaseType
       virtual const bool isDatablock() { return false; };
       
       virtual const char* prepData( const char* data, char* buffer, U32 bufferLen ) { return data; };
+
+      virtual StringTableEntry getTypePrefix(void) const { return StringTable->EmptyString(); }
       
       /// @}
 };
@@ -211,8 +216,9 @@ class BitfieldConsoleBaseType : public ConsoleBaseType
 
       virtual const char* getData( void* dptr, const EnumTable*, BitSet32 )
       {
-         char* returnBuffer = Con::getReturnBuffer(256);
-         dSprintf(returnBuffer, 256, "0x%08x", *((S32 *) dptr) );
+         static const U32 bufSize = 256;
+         char* returnBuffer = Con::getReturnBuffer(bufSize);
+         dSprintf(returnBuffer, bufSize, "0x%08x", *((S32 *) dptr) );
          return returnBuffer;
       }
       virtual void setData( void* dptr, S32 argc, const char** argv, const EnumTable*, BitSet32 )
@@ -252,13 +258,13 @@ const EngineTypeInfo* _MAPTYPE() { return TYPE< T >(); }
    extern S32 type; \
    extern const char* castConsoleTypeToString( _ConsoleConstType< nativeType >::ConstType &arg ); \
    extern bool castConsoleTypeFromString( nativeType &arg, const char *str ); \
-   template<> extern S32 TYPEID< nativeType >();
+   template<> S32 TYPEID< nativeType >();
    
 #define DefineUnmappedConsoleType( type, nativeType ) \
    DefineConsoleType( type, nativeType ) \
    template<> inline const EngineTypeInfo* _MAPTYPE< nativeType >() { return NULL; }
 
-#define ConsoleType( typeName, type, nativeType ) \
+#define ConsoleType( typeName, type, nativeType, typePrefix ) \
    S32 type; \
    class ConsoleType##type : public ConsoleBaseType \
    { \
@@ -274,6 +280,7 @@ const EngineTypeInfo* _MAPTYPE() { return TYPE< T >(); }
       virtual const char *getTypeClassName() { return #typeName ; } \
       virtual void       *getNativeVariable() { T* var = new T; return (void*)var; } \
       virtual void        deleteNativeVariable(void* var) { T* nativeVar = reinterpret_cast<T*>(var); delete nativeVar; } \
+      virtual StringTableEntry getTypePrefix( void ) const { return StringTable->insert( typePrefix ); } \
    }; \
    ConsoleType ## type gConsoleType ## type ## Instance;
 
@@ -303,6 +310,9 @@ const EngineTypeInfo* _MAPTYPE() { return TYPE< T >(); }
    }; \
    ConsoleType ## type gConsoleType ## type ## Instance;
 
+#define ConsoleTypeFieldPrefix( type, typePrefix ) \
+   StringTableEntry ConsoleType##type::getTypePrefix( void ) const { return StringTable->insert( typePrefix ); }
+
 #define ConsoleSetType( type ) \
    void ConsoleType##type::setData(void *dptr, S32 argc, const char **argv, const EnumTable *tbl, BitSet32 flag)
 
@@ -315,6 +325,10 @@ const EngineTypeInfo* _MAPTYPE() { return TYPE< T >(); }
    
 #define DefineEnumType( type ) \
    DECLARE_ENUM( type ); \
+   DefineConsoleType( Type ## type, type );
+
+#define DefineEnumType_R( type ) \
+   DECLARE_ENUM_R( type ); \
    DefineConsoleType( Type ## type, type );
 
 #define _ConsoleEnumType( typeName, type, nativeType ) \
@@ -344,6 +358,10 @@ const EngineTypeInfo* _MAPTYPE() { return TYPE< T >(); }
 
 #define DefineBitfieldType( type ) \
    DECLARE_BITFIELD( type ); \
+   DefineConsoleType( Type ## type, type );
+
+#define DefineBitfieldType_R( type ) \
+   DECLARE_BITFIELD_R( type ); \
    DefineConsoleType( Type ## type, type );
 
 #define _ConsoleBitfieldType( typeName, type, nativeType ) \

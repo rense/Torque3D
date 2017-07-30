@@ -25,7 +25,6 @@
 
 #include "console/console.h"
 #include "console/engineAPI.h"
-#include "platform/event.h"
 #include "gui/containers/guiScrollCtrl.h"
 #include "gfx/gfxDrawUtil.h"
 #include "gui/core/guiDefaultControlRender.h"
@@ -284,7 +283,8 @@ void GuiArrayCtrl::onRender(Point2I offset, const RectI &updateRect)
          //now render the header
          onRenderColumnHeaders(offset, parentOffset, mHeaderDim);
 
-         clipRect.point.y = headerClip.point.y + headerClip.extent.y - 1;
+         clipRect.point.y += headerClip.extent.y;
+         clipRect.extent.y -= headerClip.extent.y;
       }
       offset.y += mHeaderDim.y;
    }

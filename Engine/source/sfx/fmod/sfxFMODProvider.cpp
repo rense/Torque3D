@@ -60,10 +60,6 @@ public:
          "This will add a lowpass filter effect to the DSP effect chain of all sounds mixed in software.\n\n"
          "@note Only applies when using an %FMOD sound device.\n\n"
          "@ingroup SFXFMOD" );
-      Con::addVariable( "$pref::SFX::FMOD::useSoftwareReverbLowmem", TypeBool, &SFXFMODDevice::smPrefUseSoftwareReverbLowmem,
-         "If true, %FMOD's SFX reverb is run using 22/24kHz delay buffers, halving the memory required.\n\n"
-         "@note Only applies when using an %FMOD sound device.\n\n"
-         "@ingroup SFXFMOD" );
       Con::addVariable( "$pref::SFX::FMOD::enableProfile", TypeBool, &SFXFMODDevice::smPrefEnableProfile,
          "Whether to enable support for %FMOD's profiler.\n\n"
          "@note Only applies when using an %FMOD sound device.\n\n"
@@ -173,7 +169,11 @@ void SFXFMODProvider::init()
    const char* pDllName; // plugin-based DLL
    const char* eventDllName;
    
-#ifdef TORQUE_OS_WIN32
+#ifdef _WIN64
+   dllName = "fmodex64.dll";
+   pDllName = "fmodexp64.dll";
+   eventDllName = "fmod_event64.dll";
+#elif defined(TORQUE_OS_WIN)
    dllName = "fmodex.dll";
    pDllName = "fmodexp.dll";
    eventDllName = "fmod_event.dll";
@@ -201,21 +201,16 @@ void SFXFMODProvider::init()
    
    mFMod.eventDllRef = OsLoadLibrary( eventDllName );
    if(!mFMod.eventDllRef)
-      Con::warnf( "SFXFMODProvider - Could not locate %s - FMOD Designer intergration not available.", eventDllName );
+      Con::warnf( "SFXFMODProvider - Could not locate %s - FMOD Designer integration not available.", eventDllName );
 
    mFMod.isLoaded = true;
    mFMod.eventIsLoaded = true;
 
    #define FMOD_FUNCTION(fn_name, fn_args) \
       mFMod.isLoaded &= fmodBindFunction(mFMod.dllRef, *(void**)&mFMod.fn_name.fn, #fn_name);
-   #ifdef TORQUE_OS_WIN32
-      #define FMOD_EVENT_FUNCTION(fn_name, fn_args, export) \
-         mFMod.eventIsLoaded &= fmodBindFunction(mFMod.eventDllRef, *(void**)&mFMod.fn_name.fn, export);
-   #else
-      #define FMOD_EVENT_FUNCTION(fn_name, fn_args, export) \
-         mFMod.eventIsLoaded &= fmodBindFunction(mFMod.eventDllRef, *(void**)&mFMod.fn_name.fn, #fn_name);
-   #endif
-      
+   #define FMOD_EVENT_FUNCTION(fn_name, fn_args) \
+      mFMod.eventIsLoaded &= fmodBindFunction(mFMod.eventDllRef, *(void**)&mFMod.fn_name.fn, #fn_name);
+            
    #include FMOD_FN_FILE
    
    #undef FMOD_FUNCTION
@@ -223,11 +218,11 @@ void SFXFMODProvider::init()
 
    if(mFMod.isLoaded == false)
    {
-      Con::warnf("SFXFMODProvider - Could not locate %s - FMOD not available.", dllName);
+      Con::warnf("SFXFMODProvider - Could not load %s - FMOD not available.", dllName);
       return;
    }
    if( !mFMod.eventIsLoaded && mFMod.eventDllRef )
-      Con::warnf("SFXFMODProvider - Could not load the %s - FMOD Designer integration not available.", eventDllName);
+      Con::warnf("SFXFMODProvider - Could not load %s - FMOD Designer integration not available.", eventDllName);
 
 #endif
 

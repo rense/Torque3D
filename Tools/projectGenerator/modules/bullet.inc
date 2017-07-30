@@ -35,8 +35,7 @@ beginModule( 'bullet' );
    {
       addProjectDependency( 'libbullet' );
 
-      if (Generator::$platform != "mac")
-         addSolutionProjectRef( 'libbullet' );
+      addSolutionProjectRef( 'libbullet' );
    }
    
 endModule();

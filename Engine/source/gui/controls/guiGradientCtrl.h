@@ -48,7 +48,6 @@ public:
 	void onRender(Point2I offset, const RectI &updateRect);
 	bool onWake();
 protected:
-	GFXTexHandle mPointer;
 	StringTableEntry  mColorFunction;
 };
 //----------------------------
@@ -149,7 +148,7 @@ public:
 	void inspectPreApply();
 	void inspectPostApply();
 	void reInitSwatches( GuiGradientCtrl::PickMode );
-	void addColorRange( Point2I pos, ColorF color );
+   void addColorRange(Point2I pos, const ColorF& color);
 	void removeColorRange( GuiGradientSwatchCtrl* swatch );
 	void sortColorRange();
 

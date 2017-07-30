@@ -114,7 +114,7 @@ class Item: public ShapeBase
 
   protected:
 	DECLARE_CALLBACK( void, onStickyCollision, ( const char* objID ));
-	DECLARE_CALLBACK( void, onEnterLiquid, ( const char* objID, const char* waterCoverage, const char* liquidType ));
+	DECLARE_CALLBACK( void, onEnterLiquid, ( const char* objID, F32 waterCoverage, const char* liquidType ));
 	DECLARE_CALLBACK( void, onLeaveLiquid, ( const char* objID, const char* liquidType ));
 
   public:
@@ -149,6 +149,9 @@ class Item: public ShapeBase
    bool buildPolyList(PolyListContext context, AbstractPolyList* polyList, const Box3F &box, const SphereF &sphere);
    void buildConvex(const Box3F& box, Convex* convex);
    void onDeleteNotify(SimObject*);
+
+   static bool _setStatic(void *object, const char *index, const char *data);
+   static bool _setRotate(void *object, const char *index, const char *data);
 
   protected:
    void _updatePhysics();

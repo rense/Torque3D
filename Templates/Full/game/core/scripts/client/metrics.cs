@@ -142,8 +142,6 @@ function decalMetricsCallback()
 function renderMetricsCallback()
 {
    return "  | Render |" @
-          "  Int: " @ $RenderMetrics::RIT_Interior @
-          "  IntDL: " @ $RenderMetrics::RIT_InteriorDynamicLighting @
           "  Mesh: " @ $RenderMetrics::RIT_Mesh @
           "  MeshDL: " @ $RenderMetrics::RIT_MeshDynamicLighting @
           "  Shadow: " @ $RenderMetrics::RIT_Shadow @
@@ -245,9 +243,9 @@ function metrics( %expr )
    
    if( %metricsExpr !$= "" )
    {
-      Canvas.pushDialog( FrameOverlayGui, 1000 );
+      $GameCanvas.pushDialog( FrameOverlayGui, 1000 );
       TextOverlayControl.setValue( %metricsExpr );
    }
    else
-      Canvas.popDialog(FrameOverlayGui);
+      $GameCanvas.popDialog(FrameOverlayGui);
 }

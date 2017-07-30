@@ -38,6 +38,9 @@
 #ifndef _COLLADA_UTILS_H_
 #include "ts/collada/colladaUtils.h"
 #endif
+#ifndef _ENGINEAPI_H_
+#include "console/engineAPI.h"
+#endif
 
 /// This class allows an artist to export their animations for the model
 /// into the .dsq format.  This class in particular matches up the model
@@ -94,7 +97,8 @@ public:
       {
          eCommandType      type;       // Command type
          StringTableEntry  name;       // Command name
-         String            argv[10];   // Command arguments
+         static const U32 MAX_ARGS = 10;
+         String            argv[MAX_ARGS];   // Command arguments
          S32               argc;       // Number of arguments
          Command() : type(CmdInvalid), name(0), argc(0) { }
          Command( const char* _name )
@@ -102,68 +106,12 @@ public:
          {
             name = StringTable->insert( _name );
          }
-
-         // Helper functions to fill in the command arguments
-         inline void addArgs() { }
-
-         template< typename A >
-            inline void addArgs( A a )
-         {
-            argv[argc++] = EngineMarshallData( a );
-         }
-         template< typename A, typename B > void addArgs( A a, B b )
-         {
-            addArgs( a );
-            addArgs( b );
-         } 
-         template< typename A, typename B, typename C >
-            inline void addArgs( A a, B b, C c )
-         {
-            addArgs( a );
-            addArgs( b, c );
-         }
-         template< typename A, typename B, typename C, typename D >
-            inline void addArgs( A a, B b, C c, D d )
-         {
-            addArgs( a );
-            addArgs( b, c, d );
-         }
-         template< typename A, typename B, typename C, typename D, typename E >
-            inline void addArgs( A a, B b, C c, D d, E e )
-         {
-            addArgs( a );
-            addArgs( b, c, d, e );
-         }
-         template< typename A, typename B, typename C, typename D, typename E, typename F >
-            inline void addArgs( A a, B b, C c, D d, E e, F f )
-         {
-            addArgs( a );
-            addArgs( b, c, d, e, f );
-         }
-         template< typename A, typename B, typename C, typename D, typename E, typename F, typename G >
-            inline void addArgs( A a, B b, C c, D d, E e, F f, G g )
-         {
-            addArgs( a );
-            addArgs( b, c, d, e, f, g );
-         }
-         template< typename A, typename B, typename C, typename D, typename E, typename F, typename G, typename H >
-            inline void addArgs( A a, B b, C c, D d, E e, F f, G g, H h )
-         {
-            addArgs( a );
-            addArgs( b, c, d, e, f, g, h );
-         }
-         template< typename A, typename B, typename C, typename D, typename E, typename F, typename G, typename H, typename I >
-            inline void addArgs( A a, B b, C c, D d, E e, F f, G g, H h, I i )
-         {
-            addArgs( a );
-            addArgs( b, c, d, e, f, g, h, i );
-         }
-         template< typename A, typename B, typename C, typename D, typename E, typename F, typename G, typename H, typename I, typename J >
-            inline void addArgs( A a, B b, C c, D d, E e, F f, G g, H h, I i, J j )
-         {
-            addArgs( a );
-            addArgs( b, c, d, e, f, g, h, i, j );
-         }
+        
+        // Helper functions to fill in the command arguments
+        template<typename ...ArgTs> inline void addArgs(ArgTs ...args){
+           using Helper = engineAPI::detail::MarshallHelpers<String>;
+           Helper::marshallEach(argc, argv, args...);
+        }
       };
 
       Vector<Command>   mCommands;
@@ -210,12 +158,17 @@ public:
       void write(TSShape* shape, Stream& stream, const String& savePath);
    };
 
-   static const int MaxLegacySequences = 127;
+   static const S32 MaxLegacySequences = 127;
 
 protected:
    FileName          mShapePath;
    Vector<FileName>  mSequences;
    ChangeSet         mChangeSet;
+
+   // Paths to shapes used by MeshFit
+   static String smCapsuleShapePath;
+   static String smCubeShapePath;
+   static String smSphereShapePath;
 
    static bool addSequenceFromField( void *obj, const char *index, const char *data );
    
@@ -238,6 +191,7 @@ public:
 
    TSShape*                mShape;        // Edited shape; NULL while not loaded; not a Resource<TSShape> as we don't want it to prevent from unloading.
    ColladaUtils::ImportOptions   mOptions;
+   bool mLoadingShape;
 
 public:
 
@@ -247,16 +201,25 @@ public:
 
    DECLARE_CONOBJECT(TSShapeConstructor);
    static void initPersistFields();
+   static void consoleInit();
    static TSShapeConstructor* findShapeConstructor(const FileName& path);
 
    bool onAdd();
 
    void onScriptChanged(const Torque::Path& path);
+   void onActionPerformed();
 
    bool writeField(StringTableEntry fieldname, const char *value);
    void writeChangeSet();
 
    void notifyShapeChanged();
+
+   /// @name Shape paths for MeshFit
+   ///@{
+   static const String& getCapsuleShapePath() { return smCapsuleShapePath; }
+   static const String& getCubeShapePath() { return smCubeShapePath; }
+   static const String& getSphereShapePath() { return smSphereShapePath; }
+   ///@}
 
    TSShape* getShape() const { return mShape; }
    const String& getShapePath() const { return mShapePath; }
@@ -367,8 +330,16 @@ typedef domUpAxisType TSShapeConstructorUpAxis;
 typedef ColladaUtils::ImportOptions::eLodType TSShapeConstructorLodType;
 
 DefineEnumType( TSShapeConstructorUpAxis );
-DefineEnumType( TSShapeConstructorLodType );
+DefineEnumType(TSShapeConstructorLodType);
 
+class TSShapeConstructorMethodActionCallback
+{
+   TSShapeConstructor* mObject;
+
+public:
+   TSShapeConstructorMethodActionCallback(TSShapeConstructor *object) : mObject(object) { ; }
+   ~TSShapeConstructorMethodActionCallback() { mObject->onActionPerformed(); }
+};
 
 /* This macro simplifies the definition of a TSShapeConstructor API method. It
    wraps the actual EngineMethod definition and automatically calls the real
@@ -387,6 +358,7 @@ DefineEnumType( TSShapeConstructorLodType );
          Con::errorf( "TSShapeConstructor::" #name " - shape not loaded" );                     \
          return defRet;                                                                         \
       }                                                                                         \
+      TSShapeConstructorMethodActionCallback actionCallback(object);                            \
       return object->name rawArgs ;                                                             \
    }                                                                                            \
    /* Define the real TSShapeConstructor method */                                              \

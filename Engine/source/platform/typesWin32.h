@@ -76,7 +76,12 @@ typedef double             F64;     ///< Compiler independent 64-bit float
 // size_t is needed to overload new
 // size_t tends to be OS and compiler specific and may need to
 // be if/def'ed in the future
+
+#ifdef _WIN64
+typedef unsigned long long  dsize_t;
+#else
 typedef unsigned int  dsize_t;
+#endif // _WIN64
 
 typedef const char* StringTableEntry;
 
@@ -116,7 +121,9 @@ static const F32 F32_MAX = F32(3.402823466e+38F);                 ///< Constant 
 
 
 #ifdef _MSC_VER
+#if _MSC_VER < 1700
 #define for if(false) {} else for   ///< Hack to work around Microsoft VC's non-C++ compliance on variable scoping
+#endif
 #endif
 
 

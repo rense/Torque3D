@@ -405,10 +405,8 @@ function GameCore::startGame(%game)
       $Game::Schedule = %game.schedule($Game::Duration * 1000, "onGameDurationEnd");
    $Game::Running = true;
 
-//    // Start the AIManager
-//    new ScriptObject(AIManager) {};
-//    MissionCleanup.add(AIManager);
-//    AIManager.think();
+//    // Start the AI on the specified path
+//    AIPlayer::spawn("Path1");
 }
 
 function GameCore::endGame(%game, %client)
@@ -422,9 +420,6 @@ function GameCore::endGame(%game, %client)
       error("endGame: No game running!");
       return;
    }
-
-//    // Stop the AIManager
-//    AIManager.delete();
 
    // Stop any game timers
    cancel($Game::Schedule);
@@ -578,6 +573,31 @@ function GameCore::onClientEnterGame(%game, %client)
       %client.isAiControlled(),
       %client.isAdmin,
       %client.isSuperAdmin);
+      
+   %entityIds = parseMissionGroupForIds("Entity", "");
+   %entityCount = getWordCount(%entityIds);
+   
+   for(%i=0; %i < %entityCount; %i++)
+   {
+      %entity = getWord(%entityIds, %i);
+      
+      for(%e=0; %e < %entity.getCount(); %e++)
+      {
+         %child = %entity.getObject(%e);
+         if(%child.getCLassName() $= "Entity")
+            %entityIds = %entityIds SPC %child.getID();  
+      }
+      
+      for(%c=0; %c < %entity.getComponentCount(); %c++)
+      {
+         %comp = %entity.getComponentByIndex(%c);
+         
+         if(%comp.isMethod("onClientConnect"))
+         {
+            %comp.onClientConnect(%client);  
+         }
+      }
+   }
 }
 
 function GameCore::onClientLeaveGame(%game, %client)
@@ -644,7 +664,7 @@ function GameCore::loadOut(%game, %player)
    }
    else
    {
-      %player.mountImage(Lurker, 0);
+      %player.mountImage(Ryder, 0);
    }
 }
 
@@ -681,9 +701,6 @@ function GameCore::onDeath(%game, %client, %sourceObject, %sourceClient, %damage
    // Clear out the name on the corpse
    %client.player.setShapeName("");
 
-   // Update the numerical Health HUD
-   %client.player.updateHealth();
-
    // Switch the client over to the death cam and unhook the player object.
    if (isObject(%client.camera) && isObject(%client.player))
    {
@@ -699,7 +716,7 @@ function GameCore::onDeath(%game, %client, %sourceObject, %sourceClient, %damage
    call( %sendMsgFunction, 'MsgClientKilled', %client, %sourceClient, %damLoc );
 
    // Dole out points and check for win
-   if ( %damageType $= "Suicide" || %sourceClient == %client )
+   if (( %damageType $= "Suicide" || %sourceClient == %client ) && isObject(%sourceClient))
    {
       %game.incDeaths( %client, 1, true );
       %game.incScore( %client, -1, false );

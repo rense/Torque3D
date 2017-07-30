@@ -59,7 +59,7 @@
 
 
 // This doesn't appear to exist in some contexts, so let's just add it.
-#if defined(TORQUE_OS_WIN32) || defined(TORQUE_OS_XENON)
+#if defined(TORQUE_OS_WIN) || defined(TORQUE_OS_XENON)
 #ifndef WINAPI
 #define WINAPI __stdcall
 #endif
@@ -78,7 +78,7 @@
 // Typedefs
 #define FMOD_FUNCTION(fn_name, fn_args) \
    typedef FMOD_RESULT (WINAPI *FMODFNPTR##fn_name)fn_args;
-#define FMOD_EVENT_FUNCTION(fn_name, fn_args, dllexport) \
+#define FMOD_EVENT_FUNCTION(fn_name, fn_args) \
    typedef FMOD_RESULT (WINAPI *FMODFNPTR##fn_name)fn_args;
 #include FMOD_FN_FILE
 #undef FMOD_FUNCTION
@@ -105,8 +105,8 @@ struct FModFNTable
    }
    ~FModFNTable()
    {
-      eventDllRef = NULL;
       dllRef = NULL;
+      eventDllRef = NULL;      
       delete mutex;
    }
 
@@ -189,7 +189,7 @@ struct FModFNTable
 
 #define FMOD_FUNCTION(fn_name, fn_args) \
    Thunk< FMODFNPTR##fn_name > fn_name;
-#define FMOD_EVENT_FUNCTION(fn_name, fn_args, dllexport) \
+#define FMOD_EVENT_FUNCTION(fn_name, fn_args) \
    Thunk< FMODFNPTR##fn_name > fn_name;
 #include FMOD_FN_FILE
 #undef FMOD_FUNCTION
@@ -293,9 +293,6 @@ class SFXFMODDevice : public SFXDevice
       
       ///
       static bool smPrefUseSoftwareHRTF;
-      
-      ///
-      static bool smPrefUseSoftwareReverbLowmem;
       
       ///
       static bool smPrefEnableProfile;

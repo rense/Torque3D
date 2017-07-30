@@ -46,6 +46,8 @@ function EWCreatorWindow::init( %this )
       %this.registerMissionObject( "SFXEmitter",          "Sound Emitter" );
       %this.registerMissionObject( "Precipitation" );
       %this.registerMissionObject( "ParticleEmitterNode", "Particle Emitter" );
+      %this.registerMissionObject( "VolumetricFog", "Volumetric Fog" );
+      %this.registerMissionObject( "RibbonNode", "Ribbon" );
       
       // Legacy features. Users should use Ground Cover and the Forest Editor.   
       //%this.registerMissionObject( "fxShapeReplicator",   "Shape Replicator" );
@@ -82,6 +84,8 @@ function EWCreatorWindow::init( %this )
       %this.registerMissionObject( "SpawnSphere",  "Observer Spawn Sphere", "ObserverDropPoint" );
       %this.registerMissionObject( "SFXSpace",      "Sound Space" );
       %this.registerMissionObject( "OcclusionVolume", "Occlusion Volume" );
+      %this.registerMissionObject( "AccumulationVolume", "Accumulation Volume" );
+      %this.registerMissionObject( "Entity",       "Entity" );
       
    %this.endGroup();
    
@@ -169,41 +173,10 @@ function EWCreatorWindow::setNewObjectGroup( %this, %group )
    EditorTree.markItem( %itemId );
 }
 
-function EWCreatorWindow::createInterior( %this, %file )
-{
-   if ( !$missionRunning )
-      return;
-      
-   if(isFunction("getObjectLimit") && MissionGroup.getFullCount() >= getObjectLimit())
-   {
-      MessageBoxOKBuy( "Object Limit Reached", "You have exceeded the object limit of " @ getObjectLimit() @ " for this demo. You can remove objects if you would like to add more.", "", "Canvas.showPurchaseScreen(\"objectlimit\");" );
-      return;
-   }
-
-   if( !isObject(%this.objectGroup) )
-      %this.setNewObjectGroup( MissionGroup );
-
-   %objId = new InteriorInstance()
-   {
-      position = %this.getCreateObjectPosition();
-      rotation = "0 0 0";
-      interiorFile = %file;
-      parentGroup = %this.objectGroup;
-   };
-
-   %this.onObjectCreated( %objId );
-}
-
 function EWCreatorWindow::createStatic( %this, %file )
 {
    if ( !$missionRunning )
       return;
-
-   if(isFunction("getObjectLimit") && MissionGroup.getFullCount() >= getObjectLimit())
-   {
-      MessageBoxOKBuy( "Object Limit Reached", "You have exceeded the object limit of " @ getObjectLimit() @ " for this demo. You can remove objects if you would like to add more.", "", "Canvas.showPurchaseScreen(\"objectlimit\");" );
-      return;
-   }
 
    if( !isObject(%this.objectGroup) )
       %this.setNewObjectGroup( MissionGroup );
@@ -223,12 +196,6 @@ function EWCreatorWindow::createPrefab( %this, %file )
    if ( !$missionRunning )
       return;
 
-   if(isFunction("getObjectLimit") && MissionGroup.getFullCount() >= getObjectLimit())
-   {
-      MessageBoxOKBuy( "Object Limit Reached", "You have exceeded the object limit of " @ getObjectLimit() @ " for this demo. You can remove objects if you would like to add more.", "", "Canvas.showPurchaseScreen(\"objectlimit\");" );
-      return;
-   }
-
    if( !isObject(%this.objectGroup) )
       %this.setNewObjectGroup( MissionGroup );
 
@@ -247,12 +214,6 @@ function EWCreatorWindow::createObject( %this, %cmd )
    if ( !$missionRunning )
       return;
 
-   if(isFunction("getObjectLimit") && MissionGroup.getFullCount() >= getObjectLimit())
-   {
-      MessageBoxOKBuy( "Object Limit Reached", "You have exceeded the object limit of " @ getObjectLimit() @ " for this demo. You can remove objects if you would like to add more.", "", "Canvas.showPurchaseScreen(\"objectlimit\");" );
-      return;
-   }
-      
    if( !isObject(%this.objectGroup) )
       %this.setNewObjectGroup( MissionGroup );
 
@@ -343,25 +304,56 @@ function EWCreatorWindow::navigate( %this, %address )
                %this.addShapeIcon( %obj );
          }
       }
+      
+      //Add a separate folder for Game Objects
+      if(isClass("Entity"))
+      {
+          if(%address $= "")
+          {
+              %this.addFolderIcon("GameObjects");
+          }
+          else
+          {
+              //find all GameObjectAssets
+              %assetQuery = new AssetQuery();
+              if(!AssetDatabase.findAssetType(%assetQuery, "GameObjectAsset"))
+                 return 0; //if we didn't find ANY, just exit
+
+              %count = %assetQuery.getCount();
+
+              for(%i=0; %i < %count; %i++)
+              {
+                 %assetId = %assetQuery.getAsset(%i);
+
+                 %gameObjectAsset = AssetDatabase.acquireAsset(%assetId);
+
+                 if(isFile(%gameObjectAsset.TAMLFilePath))
+                 {
+                    %this.addGameObjectIcon( %gameObjectAsset.gameObjectName );
+                 }
+              }
+          }
+      }
    }
    
    if ( %this.tab $= "Meshes" )
    {      
-      %fullPath = findFirstFileMultiExpr( "*.dts" TAB "*.dae" TAB "*.kmz" TAB "*.dif" );
+      %fullPath = findFirstFileMultiExpr( getFormatExtensions() );
       
       while ( %fullPath !$= "" )
       {
          if (strstr(%fullPath, "cached.dts") != -1)
          {
-            %fullPath = findNextFileMultiExpr( "*.dts" TAB "*.dae" TAB "*.kmz"  TAB "*.dif" );
+            %fullPath = findNextFileMultiExpr( getFormatExtensions() );
             continue;
          }
 
          %fullPath = makeRelativePath( %fullPath, getMainDotCSDir() );                                  
-         %splitPath = strreplace( %fullPath, "/", " " );     
+         %splitPath = strreplace( %fullPath, " ", "_" );
+         %splitPath = strreplace( %splitPath, "/", " " );
          if( getWord(%splitPath, 0) $= "tools" )
          {
-            %fullPath = findNextFileMultiExpr( "*.dts" TAB "*.dae" TAB "*.kmz"  TAB "*.dif" );
+            %fullPath = findNextFileMultiExpr( getFormatExtensions() );
             continue;
          }
                       
@@ -372,6 +364,7 @@ function EWCreatorWindow::navigate( %this, %address )
          // Add this file's path (parent folders) to the
          // popup menu if it isn't there yet.
          %temp = strreplace( %pathFolders, " ", "/" );         
+         %temp = strreplace( %temp, "_", " " );
          %r = CreatorPopupMenu.findText( %temp );
          if ( %r == -1 )
          {
@@ -381,10 +374,7 @@ function EWCreatorWindow::navigate( %this, %address )
          // Is this file in the current folder?        
          if ( stricmp( %pathFolders, %address ) == 0 )
          {
-            if ( fileExt( %fullPath ) $= ".dif" )
-               %this.addInteriorIcon( %fullPath );
-            else
-               %this.addStaticIcon( %fullPath );
+            %this.addStaticIcon( %fullPath );
          }
          // Then is this file in a subfolder we need to add
          // a folder icon for?
@@ -422,7 +412,7 @@ function EWCreatorWindow::navigate( %this, %address )
             }
          }         
 
-         %fullPath = findNextFileMultiExpr( "*.dts" TAB "*.dae" TAB "*.kmz" TAB "*.dif" );
+         %fullPath = findNextFileMultiExpr( getFormatExtensions() );
       }
    }
    
@@ -473,7 +463,8 @@ function EWCreatorWindow::navigate( %this, %address )
       while ( %fullPath !$= "" )
       {         
          %fullPath = makeRelativePath( %fullPath, getMainDotCSDir() );                                  
-         %splitPath = strreplace( %fullPath, "/", " " );     
+         %splitPath = strreplace( %fullPath, " ", "_" );
+         %splitPath = strreplace( %splitPath, "/", " " );
          if( getWord(%splitPath, 0) $= "tools" )
          {
             %fullPath = findNextFile( %expr );
@@ -487,6 +478,7 @@ function EWCreatorWindow::navigate( %this, %address )
          // Add this file's path (parent folders) to the
          // popup menu if it isn't there yet.
          %temp = strreplace( %pathFolders, " ", "/" );         
+         %temp = strreplace( %temp, "_", " " );
          %r = CreatorPopupMenu.findText( %temp );
          if ( %r == -1 )
          {
@@ -494,7 +486,7 @@ function EWCreatorWindow::navigate( %this, %address )
          }
          
          // Is this file in the current folder?        
-         if ( stricmp( %pathFolders, %address ) == 0 )
+         if ( (%dirCount == 0 && %address $= "") || stricmp( %pathFolders, %address ) == 0 )
          {
             %this.addPrefabIcon( %fullPath );            
          }
@@ -664,7 +656,7 @@ function EWCreatorWindow::addFolderIcon( %this, %text )
    %ctrl = %this.createIcon();
       
    %ctrl.altCommand = "EWCreatorWindow.navigateDown(\"" @ %text @ "\");";
-   %ctrl.iconBitmap = "core/art/gui/images/folder.png";   
+   %ctrl.iconBitmap = "tools/gui/images/folder.png";   
    %ctrl.text = %text;
    %ctrl.tooltip = %text;     
    %ctrl.class = "CreatorFolderIconBtn";
@@ -752,30 +744,6 @@ function EWCreatorWindow::addStaticIcon( %this, %fullPath )
    %this.contentCtrl.addGuiControl( %ctrl );   
 }
 
-function EWCreatorWindow::addInteriorIcon( %this, %fullPath )
-{   
-   %ctrl = EWCreatorWindow.createIcon();
-   
-   %file = fileBase( %fullPath );
-   %fileLong = %file @ fileExt( %fullPath );
-   
-   %tip = %fileLong NL
-          "Size: " @ fileSize( %fullPath ) / 1000.0 SPC "KB" NL
-          "Date Created: " @ fileCreatedTime( %fullPath ) NL
-          "Last Modified: " @ fileModifiedTime( %fullPath );
-   
-   %ctrl.altCommand = "EWCreatorWindow.createInterior( \"" @ %fullPath @ "\" );";   
-   %ctrl.iconBitmap = EditorIconRegistry::findIconByClassName( "InteriorInstance" );
-   %ctrl.text = %file;
-   %ctrl.class = "CreatorInteriorIconBtn";
-   %ctrl.tooltip = %tip;
-   
-   %ctrl.buttonType = "radioButton";
-   %ctrl.groupNum = "-1";   
-   
-   %this.contentCtrl.addGuiControl( %ctrl );   
-}
-
 function EWCreatorWindow::addPrefabIcon( %this, %fullPath )
 {
    %ctrl = %this.createIcon();
@@ -793,6 +761,22 @@ function EWCreatorWindow::addPrefabIcon( %this, %fullPath )
    %ctrl.text = %file;
    %ctrl.class = "CreatorPrefabIconBtn";
    %ctrl.tooltip = %tip;
+   
+   %ctrl.buttonType = "radioButton";
+   %ctrl.groupNum = "-1";   
+   
+   %this.contentCtrl.addGuiControl( %ctrl );   
+}
+
+function EWCreatorWindow::addGameObjectIcon( %this, %gameObjectName )
+{
+   %ctrl = %this.createIcon();
+
+   %ctrl.altCommand = "spawnGameObject( \"" @ %gameObjectName @ "\", true );";
+   %ctrl.iconBitmap = EditorIconRegistry::findIconByClassName( "Prefab" );
+   %ctrl.text = %gameObjectName;
+   %ctrl.class = "CreatorGameObjectIconBtn";
+   %ctrl.tooltip = "Spawn the " @ %gameObjectName @ " GameObject";
    
    %ctrl.buttonType = "radioButton";
    %ctrl.groupNum = "-1";   

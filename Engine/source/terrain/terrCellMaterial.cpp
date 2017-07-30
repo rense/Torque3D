@@ -37,6 +37,7 @@
 #include "gfx/util/screenspace.h"
 #include "lighting/advanced/advancedLightBinManager.h"
 
+S32 sgMaxTerrainMaterialsPerPass = 3;
 
 AFTER_MODULE_INIT( MaterialManager )
 {
@@ -46,9 +47,30 @@ AFTER_MODULE_INIT( MaterialManager )
 
 Vector<TerrainCellMaterial*> TerrainCellMaterial::smAllMaterials;
 
+Vector<String> _initSamplerNames()
+{
+   Vector<String> samplerNames;
+   samplerNames.push_back("$baseTexMap");
+   samplerNames.push_back("$layerTex");   
+   samplerNames.push_back("$macrolayerTex");   
+   samplerNames.push_back("$lightMapTex");
+   samplerNames.push_back("$lightInfoBuffer");
+   for(int i = 0; i < 3; ++i)
+   {
+      samplerNames.push_back(avar("$normalMap%d",i));
+      samplerNames.push_back(avar("$detailMap%d",i));
+      samplerNames.push_back(avar("$macroMap%d",i));
+   }   
+
+   return samplerNames;
+}
+
+
+const Vector<String> TerrainCellMaterial::mSamplerNames = _initSamplerNames();
+
 TerrainCellMaterial::TerrainCellMaterial()
-   :  mCurrPass( 0 ),
-      mTerrain( NULL ),
+   :  mTerrain( NULL ),
+      mCurrPass( 0 ),
       mPrePassMat( NULL ),
       mReflectMat( NULL )
 {
@@ -101,6 +123,19 @@ void TerrainCellMaterial::_updateDefaultAnisotropy()
                   desc.samplers[sampler].minFilter = GFXTextureFilterLinear;
             }
 
+            if ( matInfo->macroTexConst->isValid() )
+            {
+               const S32 sampler = matInfo->macroTexConst->getSamplerRegister();
+
+               if ( maxAnisotropy > 1 )
+               {
+                  desc.samplers[sampler].minFilter = GFXTextureFilterAnisotropic;
+                  desc.samplers[sampler].maxAnisotropy = maxAnisotropy;
+               }
+               else
+                  desc.samplers[sampler].minFilter = GFXTextureFilterLinear;
+            }
+
             if ( matInfo->normalTexConst->isValid() )
             {
                const S32 sampler = matInfo->normalTexConst->getSamplerRegister();
@@ -117,11 +152,17 @@ void TerrainCellMaterial::_updateDefaultAnisotropy()
          } // for ( U32 m=0; m < pass.materials.size(); m++ )
 
          // Set the updated stateblock.
+         desc.setCullMode( GFXCullCCW );
          pass.stateBlock = GFX->createStateBlock( desc );
+
+         //reflection
+         desc.setCullMode( GFXCullCW );
+         pass.reflectionStateBlock = GFX->createStateBlock(desc);
 
          // Create the wireframe state blocks.
          GFXStateBlockDesc wireframe( desc );
          wireframe.fillMode = GFXFillWireframe;
+         wireframe.setCullMode( GFXCullCCW );
          pass.wireframeStateBlock = GFX->createStateBlock( wireframe );
 
       } // for ( U32 p=0; i < (*iter)->mPasses.size(); p++ )
@@ -276,12 +317,12 @@ bool TerrainCellMaterial::_createPass( Vector<MaterialInfo*> *materials,
    if ( GFX->getPixelShaderVersion() < 3.0f )
       baseOnly = true;
 
-   // NOTE: At maximum we only try to combine 3 materials 
+   // NOTE: At maximum we only try to combine sgMaxTerrainMaterialsPerPass materials 
    // into a single pass.  This is sub-optimal for the simplest
    // cases, but the most common case results in much fewer
    // shader generation failures and permutations leading to
    // faster load time and less hiccups during gameplay.
-   U32 matCount = getMin( 3, materials->size() );
+   U32 matCount = getMin( sgMaxTerrainMaterialsPerPass, materials->size() );
 
    Vector<GFXTexHandle> normalMaps;
 
@@ -315,24 +356,27 @@ bool TerrainCellMaterial::_createPass( Vector<MaterialInfo*> *materials,
    {
       FeatureSet features;
       features.addFeature( MFT_VertTransform );
-      features.addFeature( MFT_TerrainBaseMap );
 
       if ( prePassMat )
       {
          features.addFeature( MFT_EyeSpaceDepthOut );
          features.addFeature( MFT_PrePassConditioner );
+         features.addFeature( MFT_DeferredTerrainBaseMap );
+         features.addFeature(MFT_isDeferred);
 
          if ( advancedLightmapSupport )
-            features.addFeature( MFT_RenderTarget1_Zero );
+            features.addFeature( MFT_RenderTarget3_Zero );
       }
       else
       {
+         features.addFeature( MFT_TerrainBaseMap );
          features.addFeature( MFT_RTLighting );
 
          // The HDR feature is always added... it will compile out
          // if HDR is not enabled in the engine.
          features.addFeature( MFT_HDROut );
       }
+      features.addFeature(MFT_DeferredTerrainBlankInfoMap);
 
       // Enable lightmaps and fogging if we're in BL.
       if ( reflectMat || useBLM )
@@ -369,6 +413,18 @@ bool TerrainCellMaterial::_createPass( Vector<MaterialInfo*> *materials,
 
          S32 featureIndex = pass->materials.size();
 
+		 // check for macro detail texture
+         if (  !(mat->getMacroSize() <= 0 || mat->getMacroDistance() <= 0 || mat->getMacroMap().isEmpty() ) )
+         {
+            if(prePassMat)
+               features.addFeature( MFT_DeferredTerrainMacroMap, featureIndex );
+            else
+	         features.addFeature( MFT_TerrainMacroMap, featureIndex );
+         }
+
+         if(prePassMat)
+             features.addFeature( MFT_DeferredTerrainDetailMap, featureIndex );
+         else
          features.addFeature( MFT_TerrainDetailMap, featureIndex );
 
          pass->materials.push_back( (*materials)[i] );
@@ -443,7 +499,7 @@ bool TerrainCellMaterial::_createPass( Vector<MaterialInfo*> *materials,
          const bool logErrors = matCount == 1;
          GFXShader::setLogging( logErrors, true );
 
-         pass->shader = SHADERGEN->getShader( featureData, getGFXVertexFormat<TerrVertex>(), NULL );
+         pass->shader = SHADERGEN->getShader( featureData, getGFXVertexFormat<TerrVertex>(), NULL, mSamplerNames );
       }
 
       // If we got a shader then we can continue.
@@ -482,14 +538,7 @@ bool TerrainCellMaterial::_createPass( Vector<MaterialInfo*> *materials,
    pass->oneOverTerrainSize = pass->shader->getShaderConstHandle( "$oneOverTerrainSize" );
    pass->squareSize = pass->shader->getShaderConstHandle( "$squareSize" );
 
-   // NOTE: We're assuming rtParams0 here as we know its the only
-   // render target we currently get in a terrain material and the
-   // DeferredRTLightingFeatHLSL will always use 0.
-   //
-   // This could change in the future and we would need to fix
-   // the ShaderFeature API to allow us to do this right.
-   //
-   pass->lightParamsConst = pass->shader->getShaderConstHandle( "$rtParams0" );
+   pass->lightParamsConst = pass->shader->getShaderConstHandle( "$rtParamslightInfoBuffer" );
 
    // Now prepare the basic stateblock.
    GFXStateBlockDesc desc;
@@ -506,15 +555,12 @@ bool TerrainCellMaterial::_createPass( Vector<MaterialInfo*> *materials,
       // output normal with the previous pass.
       //
       if ( prePassMat )
-         desc.setColorWrites( true, true, false, false );
+         desc.setColorWrites( true, true, true, false );
    }
 
    // We write to the zbuffer if this is a prepass
    // material or if the prepass is disabled.
-   // We also write the zbuffer if we're using OpenGL, because in OpenGL the prepass
-   // cannot share the same zbuffer as the backbuffer.
    desc.setZReadWrite( true,  !MATMGR->getPrePassEnabled() || 
-                              GFX->getAdapterType() == OpenGL ||
                               prePassMat ||
                               reflectMat );
 
@@ -567,6 +613,31 @@ bool TerrainCellMaterial::_createPass( Vector<MaterialInfo*> *materials,
             &GFXDefaultStaticDiffuseProfile, "TerrainCellMaterial::_createPass() - DetailMap" );
       }
 
+      matInfo->macroInfoVConst = pass->shader->getShaderConstHandle( avar( "$macroScaleAndFade%d", i ) );
+      matInfo->macroInfoPConst = pass->shader->getShaderConstHandle( avar( "$macroIdStrengthParallax%d", i ) );
+
+      matInfo->macroTexConst = pass->shader->getShaderConstHandle( avar( "$macroMap%d", i ) );
+      if ( matInfo->macroTexConst->isValid() )
+      {
+         const S32 sampler = matInfo->macroTexConst->getSamplerRegister();
+
+         desc.samplers[sampler] = GFXSamplerStateDesc::getWrapLinear();
+         desc.samplers[sampler].magFilter = GFXTextureFilterLinear;
+         desc.samplers[sampler].mipFilter = GFXTextureFilterLinear;
+
+         if ( maxAnisotropy > 1 )
+         {
+            desc.samplers[sampler].minFilter = GFXTextureFilterAnisotropic;
+            desc.samplers[sampler].maxAnisotropy = maxAnisotropy;
+         }
+         else
+            desc.samplers[sampler].minFilter = GFXTextureFilterLinear;
+
+         matInfo->macroTex.set( matInfo->mat->getMacroMap(), 
+            &GFXDefaultStaticDiffuseProfile, "TerrainCellMaterial::_createPass() - MacroMap" );
+      }
+	  //end macro texture
+
       matInfo->normalTexConst = pass->shader->getShaderConstHandle( avar( "$normalMap%d", i ) );
       if ( matInfo->normalTexConst->isValid() )
       {
@@ -603,15 +674,17 @@ bool TerrainCellMaterial::_createPass( Vector<MaterialInfo*> *materials,
    if ( prePassMat )
       desc.addDesc( RenderPrePassMgr::getOpaqueStenciWriteDesc( false ) );
 
-   // Flip the cull for reflection materials.
-   if ( reflectMat )
-      desc.setCullMode( GFXCullCW );
+   desc.setCullMode( GFXCullCCW );
+   pass->stateBlock = GFX->createStateBlock(desc);
 
-   pass->stateBlock = GFX->createStateBlock( desc );
+   //reflection stateblock
+   desc.setCullMode( GFXCullCW );
+   pass->reflectionStateBlock = GFX->createStateBlock(desc);
 
    // Create the wireframe state blocks.
    GFXStateBlockDesc wireframe( desc );
    wireframe.fillMode = GFXFillWireframe;
+   wireframe.setCullMode( GFXCullCCW );
    pass->wireframeStateBlock = GFX->createStateBlock( wireframe );
 
    return true;
@@ -657,6 +730,31 @@ void TerrainCellMaterial::_updateMaterialConsts( Pass *pass )
 
       pass->consts->setSafe( matInfo->detailInfoVConst, detailScaleAndFade );
       pass->consts->setSafe( matInfo->detailInfoPConst, detailIdStrengthParallax );
+
+	// macro texture info
+
+      F32 macroSize = matInfo->mat->getMacroSize();
+      F32 macroScale = 1.0f;
+      if ( !mIsZero( macroSize ) )
+         macroScale = mTerrain->getWorldBlockSize() / macroSize;
+
+      // Scale the distance by the global scalar.
+      const F32 macroDistance = mTerrain->smDetailScale * matInfo->mat->getMacroDistance();
+
+      Point4F macroScaleAndFade(   macroScale,
+                                    -macroScale,
+                                    macroDistance, 
+                                    0 );
+
+      if ( !mIsZero( macroDistance ) )
+         macroScaleAndFade.w = 1.0f / macroDistance;
+
+      Point3F macroIdStrengthParallax( matInfo->layerId,
+                                        matInfo->mat->getMacroStrength(),
+                                        0 );
+
+      pass->consts->setSafe( matInfo->macroInfoVConst, macroScaleAndFade );
+      pass->consts->setSafe( matInfo->macroInfoPConst, macroIdStrengthParallax );
    }
 }
 
@@ -686,6 +784,8 @@ bool TerrainCellMaterial::setupPass(   const SceneRenderState *state,
 
    if ( sceneData.wireframe )
       GFX->setStateBlock( pass.wireframeStateBlock );
+   else if ( state->isReflectPass( ))
+      GFX->setStateBlock( pass.reflectionStateBlock );
    else
       GFX->setStateBlock( pass.stateBlock );
 
@@ -706,6 +806,8 @@ bool TerrainCellMaterial::setupPass(   const SceneRenderState *state,
 
       if ( matInfo->detailTexConst->isValid() )
          GFX->setTexture( matInfo->detailTexConst->getSamplerRegister(), matInfo->detailTex );
+      if ( matInfo->macroTexConst->isValid() )
+         GFX->setTexture( matInfo->macroTexConst->getSamplerRegister(), matInfo->macroTex );
       if ( matInfo->normalTexConst->isValid() )
          GFX->setTexture( matInfo->normalTexConst->getSamplerRegister(), matInfo->normalTex );
    }

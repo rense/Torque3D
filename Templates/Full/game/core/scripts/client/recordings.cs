@@ -97,7 +97,6 @@ function startDemoRecord()
 
    ChatHud.AddLine( "\c4Recording to file [\c2" @ $DemoFileName @ "\cr].");
 
-   ServerConnection.prepDemoRecord();
    ServerConnection.startRecording($DemoFileName);
 
    // make sure start worked
@@ -129,15 +128,24 @@ function demoPlaybackComplete()
    // handling functionality.
    clientEndMission();
 
-   if ( $UseUnifiedShell )
-   {
-      if (isObject( UnifiedMainMenuGui ))
-         Canvas.setContent( UnifiedMainMenuGui );
-      else if (isObject( MainMenuGui ))
-         Canvas.setContent( MainMenuGui );
-   }
-   else if (isObject( MainMenuGui ))
+   if (isObject( MainMenuGui ))
       Canvas.setContent( MainMenuGui );
 
    Canvas.pushDialog(RecordingsDlg);
+}
+
+function deleteDemoRecord()
+{
+   %sel = RecordingsDlgList.getSelectedId();
+   %rowText = RecordingsDlgList.getRowTextById(%sel);
+   %file = $currentMod @ "/recordings/" @ getField(%rowText, 0) @ ".rec";
+   
+   if(!isfile(%file))
+   {
+      RecordingsDlgList.removeRowById(%sel);
+      return;
+   }
+   
+   RecordingsDlgList.removeRowById(%sel);
+   fileDelete(%file);
 }

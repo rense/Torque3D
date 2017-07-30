@@ -152,10 +152,11 @@ class RigidShape: public ShapeBase
       WheelCollision = BIT(1),
    };
    enum MaskBits {
-      PositionMask = Parent::NextFreeMask << 0,
-      EnergyMask   = Parent::NextFreeMask << 1,
-      FreezeMask   = Parent::NextFreeMask << 2,
-      NextFreeMask = Parent::NextFreeMask << 3
+      PositionMask   = Parent::NextFreeMask << 0,
+      EnergyMask     = Parent::NextFreeMask << 1,
+      FreezeMask     = Parent::NextFreeMask << 2,
+      ForceMoveMask  = Parent::NextFreeMask << 3,
+      NextFreeMask = Parent::NextFreeMask << 4
    };
 
    void updateDustTrail( F32 dt );
@@ -194,7 +195,7 @@ class RigidShape: public ShapeBase
    CollisionList mContacts;
    Rigid mRigid;
    ShapeBaseConvex mConvex;
-   int restCount;
+   S32 restCount;
 
    SimObjectPtr<ParticleEmitter> mDustEmitterList[RigidShapeData::VC_NUM_DUST_EMITTERS];
    SimObjectPtr<ParticleEmitter> mSplashEmitterList[RigidShapeData::VC_NUM_SPLASH_EMITTERS];
@@ -283,6 +284,10 @@ public:
    /// @param   impulse   Impulse vector to apply.
    void applyImpulse(const Point3F &r, const Point3F &impulse);
 
+   /// Forces the client to jump to the RigidShape's transform rather
+   /// then warp to it.
+   void forceClientTransform();
+
    void getCameraParameters(F32 *min, F32* max, Point3F* offset, MatrixF* rot);
    void getCameraTransform(F32* pos, MatrixF* mat);
    ///@}
@@ -291,7 +296,7 @@ public:
    void unpackUpdate(NetConnection *conn,           BitStream *stream);
 
    DECLARE_CONOBJECT(RigidShape);
-   DECLARE_CALLBACK( void, onEnterLiquid, ( const char* objId, const char* waterCoverage, const char* liquidType ));
+   DECLARE_CALLBACK( void, onEnterLiquid, ( const char* objId, F32 waterCoverage, const char* liquidType ));
    DECLARE_CALLBACK( void, onLeaveLiquid, ( const char* objId, const char* liquidType ));
 };
 
